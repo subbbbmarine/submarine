@@ -1,0 +1,90 @@
+# Submarine - Git Ignore
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+cache/
+**/dist/
+**/build/
+**/out/
+**/cache/
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Next.js
+web/.next/
+web/.vercel/
+web/next-env.d.ts
+
+# TypeScript
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+! .env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.pem
+*.key
+*.crt
+
+# Data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary
+tmp/
+temp/
+*.tmp
+.hermes-backup/
+
+.local/
+contracts/deployments/31337.json
+indexer/data/
+
+# Claude Code per-machine settings
+.claude/settings.local.json
+
+# The docs built for submarine.live (landing/build-docs.mjs)
+web/.docs-site/
+landing/public/_next/
+landing/public/docs/
+landing/public/docs.html
+landing/public/docs.txt
+landing/public/__next*
+landing/public/icon.svg*

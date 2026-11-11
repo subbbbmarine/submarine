@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submarine</title>
+<meta name="description" content="Trading terminal and launchpad on Zero by LayerZero. Launch a coin on a curve, then trade it with limit orders, stops, DCA and copy trading, all in one screen. Opening soon.">
+<meta name="theme-color" content="#0a0a0d">
+<meta property="og:title" content="Submarine">
+<meta property="og:description" content="Trading terminal and launchpad on Zero. Opening soon.">
+<meta property="og:image" content="assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --card: #111116;
+    --card2: #1b1b22;
+    --line: rgb(255 255 255 / 0.07);
+    --ink: #f4f4f5;
+    --muted: #9e9ead;
+    --faint: #7c7c8b;
+    --accent: #66e4ec;
+    --wrap: 1180px;
+    --pad: 24px;
+    --r-sm: 9px;
+    --r-md: 14px;
+    --r-lg: 20px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font: 400 16px/1.6 "General Sans", system-ui, sans-serif; overflow-x: clip; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+
+  /* Header: the S and the name, plain links, one button. Same edges as the page. */
+  header { position: absolute; inset: 0 0 auto; z-index: 3; }
+  header .wrap { height: 76px; display: flex; align-items: center; gap: 28px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; font-size: 18px; letter-spacing: -0.2px; }
+  .brand img { height: 26px; width: auto; display: block; }
+  header nav { margin-left: auto; display: flex; align-items: center; gap: 26px; font-size: 15px; color: rgb(255 255 255 / 0.78); }
+  header nav a:hover { color: #fff; }
+  .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: var(--r-sm); font-weight: 600; font-size: 14px; transition: background-color .18s, transform .12s; }
+  .btn:active { transform: scale(.98); }
+  .btn-accent { background: var(--accent); color: #041316; }
+  .btn-accent:hover { background: #9cf0f4; }
+  .btn-glass { background: rgb(255 255 255 / 0.12); color: #fff; backdrop-filter: blur(10px); }
+  .btn-glass:hover { background: rgb(255 255 255 / 0.2); }
+
+  /* Hero: the banner's water, full screen, the headline in the middle. */
+  .hero { position: relative; min-height: max(640px, 100svh); display: flex; align-items: center; overflow: hidden; background: #0b2a2e; }
+  .hero-photo { position: absolute; inset: 0; background: url(assets/hero.jpg) center 30% / cover; transform: scale(1.04); animation: drift 26s ease-in-out infinite alternate; }
+  .hero::after { content: ""; position: absolute; inset: 0; background:
+      linear-gradient(180deg, rgb(4 20 24 / .35) 0%, rgb(4 20 24 / .05) 30%, rgb(4 20 24 / .2) 62%, var(--bg) 100%); }
+  .hero .wrap { position: relative; z-index: 2; text-align: center; width: 100%; }
+  .hero h1 { margin: 0 auto; max-width: 15ch; font-weight: 600; font-size: clamp(44px, 7.2vw, 96px); line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; text-shadow: 0 2px 30px rgb(0 30 34 / .25); }
+  .hero h1 span { font-weight: 300; }
+  .hero p { margin: 26px auto 0; max-width: 34em; font-size: clamp(17px, 1.6vw, 20px); color: rgb(255 255 255 / .9); }
+  .soon { margin-top: 34px; display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: var(--r-sm); background: rgb(6 30 34 / .5); backdrop-filter: blur(12px); font-weight: 500; font-size: 15px; }
+  .soon i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); position: relative; }
+  .soon i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--accent); animation: ping 2s ease-out infinite; }
+
+  /* Everything below the hero sits on graphite. */
+  section { padding: 96px 0; }
+  h2 { margin: 0; font-weight: 600; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.06; letter-spacing: -0.025em; max-width: 18ch; text-wrap: balance; }
+  h2 span { font-weight: 300; color: var(--muted); }
+  .lead { margin: 18px 0 0; max-width: 36em; color: var(--muted); font-size: 18px; }
+  .lead a { color: var(--accent); text-decoration: none; }
+  .lead a:hover { text-decoration: underline; }
+
+  /* Pieces of the docs, cut off as if torn from the pages. */
+  .pages { margin-top: 48px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .page { position: relative; grid-column: span 4; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px 24px 0; height: 330px; overflow: hidden; }
+  .page.wide { grid-column: span 8; }
+  .page.full { grid-column: span 12; height: 290px; }
+  .page::after { content: ""; position: absolute; inset: auto 0 0; height: 120px; background: linear-gradient(180deg, transparent, var(--card) 85%); pointer-events: none; }
+  .page .path { font: 500 12.5px/1 "IBM Plex Mono", monospace; color: var(--faint); }
+  .page h3 { margin: 14px 0 10px; font-weight: 600; font-size: 22px; letter-spacing: -0.01em; line-height: 1.2; }
+  .page p { margin: 0 0 12px; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
+  .page b { color: var(--ink); font-weight: 500; }
+  /* Each piece opens its whole page in the docs: the title's link covers the card. */
+  .page { transition: border-color .2s; }
+  .page:hover { border-color: rgb(102 228 236 / .35); }
+  .page h3 a { color: inherit; text-decoration: none; }
+  .page h3 a::before { content: ""; position: absolute; inset: 0; z-index: 1; }
+  .page h3 a:focus-visible { outline: none; }
+  .page:has(h3 a:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code, pre { font-family: "IBM Plex Mono", monospace; }
+  pre { margin: 8px 0 0; padding: 16px 18px; border-radius: var(--r-md); background: #0b0b0f; border: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: #c9c9d3; overflow: hidden; white-space: pre; }
+  pre .k { color: var(--accent); }
+  pre .c { color: var(--faint); }
+  .rows { margin-top: 6px; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); }
+  .rows div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 14px; font-size: 14.5px; background: #0d0d11; }
+  .rows div + div { border-top: 1px solid var(--line); }
+  .rows span { color: var(--muted); }
+  .rows strong { font-weight: 500; font-variant-numeric: tabular-nums; }
+  .rows .on strong { color: var(--accent); }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .tags span { padding: 7px 11px; border-radius: 8px; background: var(--card2); font-size: 14px; }
+
+  /* Closing band. */
+  .band { position: relative; border-radius: var(--r-lg); overflow: hidden; padding: 72px 48px; background: #0b2a2e url(assets/hero-1200.jpg) center 60% / cover; }
+  .band::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(6 22 26 / .88), rgb(6 22 26 / .45)); }
+  .band > * { position: relative; }
+  .band h2 { max-width: 16ch; }
+  .band p { margin: 16px 0 28px; color: rgb(255 255 255 / .82); max-width: 32em; font-size: 18px; }
+
+  /* The big footer: every place Submarine will live, open now or soon. Soon ones are grey and can't be clicked. */
+  footer { margin-top: 24px; border-top: 1px solid var(--line); background: #08080b; padding: 64px 0 36px; }
+  .foot-top { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 40px 28px; }
+  .foot-brand .brand { font-size: 20px; }
+  .foot-brand p { margin: 16px 0 22px; color: var(--muted); font-size: 15px; max-width: 26ch; }
+  .foot-brand .soon { margin-top: 0; height: 38px; font-size: 14px; background: var(--card2); backdrop-filter: none; }
+  .col h4 { margin: 0 0 16px; font-weight: 600; font-size: 14px; color: var(--ink); }
+  .col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+  .col a, .col .off { font-size: 14.5px; line-height: 1.45; }
+  .col a { color: rgb(255 255 255 / .78); transition: color .15s; }
+  .col a:hover { color: var(--accent); }
+  .col .off { color: #5d5d6b; cursor: default; }
+  .col .off em { font-style: normal; font-size: 11.5px; font-weight: 500; color: #7c7c8b; background: var(--card2); border-radius: 5px; padding: 2px 6px; margin-left: 7px; white-space: nowrap; vertical-align: 1px; }
+  .foot-bottom { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--faint); font-size: 13.5px; }
+  .foot-bottom a { color: var(--muted); }
+  .foot-bottom a:hover { color: var(--ink); }
+
+  @keyframes drift { from { transform: scale(1.04) translateY(0); } to { transform: scale(1.1) translateY(-12px); } }
+  @keyframes ping { from { transform: scale(1); opacity: .8; } to { transform: scale(2.6); opacity: 0; } }
+  .rise { opacity: 0; transform: translateY(18px); animation: rise .9s cubic-bezier(.16,1,.3,1) forwards; }
+  .rise.d1 { animation-delay: .08s; } .rise.d2 { animation-delay: .2s; } .rise.d3 { animation-delay: .32s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-photo, .soon i::after { animation: none; }
+    .rise { animation: none; opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 1080px) {
+    .foot-top { grid-template-columns: repeat(4, 1fr); }
+    .foot-brand { grid-column: 1 / -1; }
+  }
+  @media (max-width: 960px) {
+    .page, .page.wide { grid-column: span 6; }
+    .page.full { grid-column: span 12; }
+  }
+  @media (max-width: 640px) {
+    :root { --pad: 16px; }
+    header nav a.text { display: none; }
+    section { padding: 64px 0; }
+    .page, .page.wide, .page.full { grid-column: span 12; height: 300px; }
+    .band { padding: 44px 22px; }
+    .foot-top { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; }
+    footer { padding-top: 56px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Submarine"><img src="assets/s.svg" alt="">Submarine</a>
+    <nav aria-label="Main">
+      <a class="text" href="#inside">What's inside</a>
+      <a class="text" href="/docs">Docs</a>
+      <a class="btn btn-glass" data-x href="#" hidden>Follow on X</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-photo" aria-hidden="true"></div>
+    <div class="wrap">
+      <h1 id="hero-title" class="rise">Trading terminal <span>and launchpad on Zero</span></h1>
+      <p class="rise d1">Launch a coin on a curve, then trade it with limit orders, stops, DCA and copy trading, all in one screen, on Zero by LayerZero.</p>
+      <div class="soon rise d2"><i aria-hidden="true"></i>Opening soon</div>
+    </div>
+  </section>
+
+  <section id="inside">
+    <div class="wrap">
+      <h2>Pages from the docs <span>before the doors open</span></h2>
+      <p class="lead">The terminal is built and running on a test chain. These are a few pages from its <a href="/docs">docs</a>, which are open to read now.</p>
+
+      <div class="pages">
+        <article class="page wide">
+          <div class="path">Docs, launching</div>
+          <h3><a href="/docs/launching">One transaction makes a coin</a></h3>
+          <p>The coin opens on a bonding curve, and your first buy goes in before anyone else can. When the curve fills, the coin moves to a pool and its liquidity is <b>locked for good</b>.</p>
+          <pre><span class="c">// Launchpad</span>
+<span class="k">function</span> launch(
+  string name, string symbol, string uri,
+  uint256 minTokensOut, uint256 wholeSupply,
+  uint16 feeBps, uint16 holdersBps, uint16 burnBps,
+  bool antiSnipe
+) payable returns (address)</pre>
+        </article>
+
+        <article class="page">
+          <div class="path">Docs, fees</div>
+          <h3><a href="/docs/fees">Every trade pays 1%</a></h3>
+          <div class="rows">
+            <div><span>To the terminal</span><strong>0.4%</strong></div>
+            <div class="on"><span>To the creator</span><strong>0.6%</strong></div>
+            <div><span>Your own fee on top</span><strong>0 to 10%</strong></div>
+            <div><span>Split between</span><strong>holders, burn, you</strong></div>
+          </div>
+          <p style="margin-top:14px">Set once at launch. It never changes, on the curve and on the pool.</p>
+        </article>
+
+        <article class="page">
+          <div class="path">Docs, orders</div>
+          <h3><a href="/docs/orders">Orders that wait for you</a></h3>
+          <p>Limit orders with partial fills, and exits that keepers fill on the chain while your tab is closed.</p>
+          <div class="tags"><span>Limit</span><span>Take profit</span><span>Stop loss</span><span>Trailing stop</span><span>DCA</span><span>Sell groups</span><span>On dev sell</span></div>
+        </article>
+
+        <article class="page">
+          <div class="path">Docs, copy trading</div>
+          <h3><a href="/docs/copy-trading">Copy a wallet, not a screenshot</a></h3>
+          <p>Follow a trader through a vault. Their buys and sales are copied for you at your size, with your own take profit and stop loss, and keep running when you're away.</p>
+        </article>
+
+        <article class="page">
+          <div class="path">Docs, points</div>
+          <h3><a href="/docs/points">Early users count</a></h3>
+          <div class="rows">
+            <div><span>Per ZRO you trade here</span><strong>10 points</strong></div>
+            <div><span>Per ZRO traded on your coins</span><strong>1 point</strong></div>
+            <div><span>Per ZRO on other launchpads</span><strong>5 points</strong></div>
+          </div>
+          <p style="margin-top:14px">Volume ranks also take up to 0.25% off the terminal's cut.</p>
+        </article>
+
+        <article class="page full">
+          <div class="path">Docs, API</div>
+          <h3><a href="/docs/api">Open to bots and agents</a></h3>
+          <p>A public API and a live stream, and an MCP server so AI agents can read markets and quotes.</p>
+          <pre><span class="k">GET</span>  /api/v1/tokens?sort=volume&amp;limit=2
+<span class="k">GET</span>  /api/v1/tokens/{address}/candles?interval=300
+<span class="k">GET</span>  /api/v1/stream            <span class="c">// trades as they happen</span>
+<span class="k">GET</span>  /api/v1/points/{address}</pre>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="band">
+        <h2>Coming up from the deep <span style="color:rgb(255 255 255 / .7)">on Zero</span></h2>
+        <p>Follow along for the opening, the first launches and the points board.</p>
+        <a class="btn btn-accent" data-x href="#" hidden>Follow on X</a>
+        <a class="btn btn-glass" href="/docs">Read the docs</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="/" aria-label="Submarine"><img src="assets/s.svg" alt="">Submarine</a>
+        <p>Trading terminal and launchpad on Zero by LayerZero.</p>
+        <div class="soon"><i aria-hidden="true"></i>Opening soon</div>
+      </div>
+      <div class="col"><h4>Product</h4><ul><li><span class="off" aria-disabled="true">Terminal<em>soon</em></span></li><li><span class="off" aria-disabled="true">Launchpad<em>soon</em></span></li><li><span class="off" aria-disabled="true">Copy trading<em>soon</em></span></li><li><span class="off" aria-disabled="true">Points<em>soon</em></span></li></ul></div><div class="col"><h4>Docs</h4><ul><li><a href="/docs">Overview</a></li><li><a href="/docs/getting-started">Getting started</a></li><li><a href="/docs/fees">Fees</a></li><li><a href="/docs/api">API</a></li></ul></div><div class="col"><h4>Community</h4><ul><li><a data-x href="#" hidden>X</a><span class="off" data-x-off aria-disabled="true">X<em>soon</em></span></li><li><span class="off" aria-disabled="true">Telegram<em>soon</em></span></li><li><span class="off" aria-disabled="true">Discord<em>soon</em></span></li></ul></div><div class="col"><h4>Zero</h4><ul><li><a href="https://layerzero.network/zero" target="_blank" rel="noopener">Zero by LayerZero</a></li><li><a href="https://layerzero.network/atlas" target="_blank" rel="noopener">ATLAS</a></li><li><a href="https://docs.layerzero.network" target="_blank" rel="noopener">LayerZero docs</a></li></ul></div>
+    </div>
+    <div class="foot-bottom">
+      <span>Submarine is in development. Nothing here is live trading yet, and no token exists.</span>
+      <span>Built for <a href="https://layerzero.network/zero" target="_blank" rel="noopener">Zero</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // The X account, once it exists. Until then the X links stay hidden.
+  const X_URL = '';
+  if (X_URL) {
+    document.querySelectorAll('[data-x]').forEach((a) => { a.href = X_URL; a.target = '_blank'; a.rel = 'noopener'; a.hidden = false; });
+    document.querySelectorAll('[data-x-off]').forEach((e) => e.remove());
+  }
+</script>
+</body>
+</html>

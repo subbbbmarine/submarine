@@ -1,0 +1,2 @@
+PancakeSwap Infinity core, from pancakeswap/infinity-core-bsc-base at commit 7c04695 (the build live on BSC),
+copied from D:lisium\cinder-infinity. Test mocks under src/test are left out. Licence: GPL-2.0-or-later, see LICENSE.

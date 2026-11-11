@@ -1,0 +1,25 @@
+{
+  "name": "submarine",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "indexer",
+    "web",
+    "keeper",
+    "alerts",
+    "mcp"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:indexer\"",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:indexer": "npm run dev --workspace=indexer",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "deploy:contracts": "npm run deploy --workspace=contracts",
+    "deploy:web": "npm run deploy --workspace=web"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

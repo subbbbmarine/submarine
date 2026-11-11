@@ -1,0 +1,59 @@
+{
+  "id": "sample",
+  "name": "Sample Pad",
+  "chainId": 1105,
+  "contract": "0x4Bd3F87D4eeBFBdE40D5482d3FEA9272f4527ba4",
+  "description": "Made to try this out. A tiny test curve of 0.003 ZRO, and trading stops when it fills.",
+  "test": true,
+  "startBlock": 4872212,
+  "curve": { "target": 0.003, "startCap": 0.001, "supply": 800000000 },
+  "launch": {
+    "function": "function createToken(string name_, string symbol_, string metadata_) payable returns (address token)",
+    "args": ["{name}", "{symbol}", "{uri}"],
+    "fields": ["name", "symbol", "image", "description", "links", "firstBuy"]
+  },
+  "buy": {
+    "function": "function purchase(address token, uint256 minTokens) payable returns (uint256)",
+    "args": ["{token}", "{minOut}"]
+  },
+  "sell": {
+    "function": "function dump(address token, uint256 amount, uint256 minZro) returns (uint256 received)",
+    "args": ["{token}", "{amount}", "{minOut}"]
+  },
+  "quoteBuy": {
+    "function": "function previewPurchase(address token, uint256 zroIn) view returns (uint256 tokens)",
+    "args": ["{token}", "{amount}"]
+  },
+  "quoteSell": {
+    "function": "function previewDump(address token, uint256 amount) view returns (uint256)",
+    "args": ["{token}", "{amount}"]
+  },
+  "events": {
+    "created": {
+      "event": "event TokenBorn(address indexed token, address indexed dev, string name, string symbol, string metadata)",
+      "token": "token",
+      "creator": "dev",
+      "uri": "metadata"
+    },
+    "buy": {
+      "event": "event Purchased(address indexed token, address indexed buyer, uint256 paid, uint256 got, uint256 raised)",
+      "token": "token",
+      "trader": "buyer",
+      "zro": "paid",
+      "tokens": "got",
+      "raised": "raised"
+    },
+    "sell": {
+      "event": "event Dumped(address indexed token, address indexed seller, uint256 amount, uint256 received, uint256 raised)",
+      "token": "token",
+      "trader": "seller",
+      "zro": "received",
+      "tokens": "amount",
+      "raised": "raised"
+    },
+    "graduated": {
+      "event": "event Completed(address indexed token, uint256 raised)",
+      "token": "token"
+    }
+  }
+}
