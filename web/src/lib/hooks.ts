@@ -1,6 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { onBlock } from './network';
+
+/**
+ * Runs `fn` on each new block while the page is visible, at most once every `minMs`, and every `fallbackMs` if blocks stop
+ * coming. What it reads can only change with a block, so that is when to read it, not on a timer of its own.
+ */
+export function everyBlock(fn: () => void, minMs: number, fallbackMs = 5000): () => void {
+  let last = 0;
+  const run = () => {
+    if (document.visibilityState !== 'visible') return;
+    const t = Date.now();
+    if (t - last < minMs) return;
+    last = t;
+    fn();
+  };
+  const stop = onBlock(run);
+  const id = setInterval(() => Date.now() - last >= fallbackMs && run(), fallbackMs);
+  return () => {
+    stop();
+    clearInterval(id);
+  };
+}
 
 export function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());

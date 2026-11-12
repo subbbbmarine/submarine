@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Launchpad, LaunchToken} from "../src/core/Launchpad.sol";
+import {TokenFactory} from "../src/core/TokenFactory.sol";
 import {ZroInfinityPools} from "../src/core/ZroInfinityPools.sol";
 import {ZroInfinityVenue} from "../src/periphery/ZroInfinityVenue.sol";
 import {Vault} from "infinity-core/src/Vault.sol";
@@ -48,7 +49,9 @@ contract Base is Test {
         pools = new ZroInfinityPools(owner, infinityVault, poolManager);
         venue = new ZroInfinityVenue(pools);
         pools.setVenue(address(venue));
-        pad = new Launchpad(owner, address(vault), address(pools), address(referrals));
+        TokenFactory factory = new TokenFactory();
+        pad = new Launchpad(owner, address(vault), address(pools), address(referrals), address(factory));
+        factory.setLaunchpad(address(pad));
         pools.setLaunchpad(address(pad));
         router = new Router(owner, address(vault), address(referrals));
         router.listVenue(address(pad), 0, "pad");

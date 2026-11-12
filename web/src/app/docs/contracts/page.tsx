@@ -53,6 +53,7 @@ export default function Page() {
         cols={['Contract', 'Talks to', 'Holds money?']}
         rows={[
           ['Launchpad', 'ZroInfinityPools (opens a pool at graduation), Referrals, the treasury, the router (asks who is trading)', 'ZRO raised on every curve, unclaimed creator fees, treasury fees until collected'],
+          ['TokenFactory', 'Launchpad, the only contract that may use it', 'Nothing. It deploys each token, whose whole supply goes to the launchpad'],
           ['ZroInfinityPools', 'Infinity\'s CLPoolManager (as every pool\'s hook) and Vault, Launchpad (pays each token\'s fee back to its earners and the terminal\'s cut to the treasury), the router (asks who is trading, for its rank)', 'Fees not yet paid out, as claims on Infinity\'s vault, and a few wei left from rounding when each pool opened'],
           ['ZroInfinityVenue', 'Infinity\'s Vault and CLPoolManager (each trade), ZroInfinityPools (quotes, and paying out the fee after each trade)', 'Nothing between calls'],
           ['Infinity Vault', 'CLPoolManager, the only app registered on it', 'Every pool\'s ZRO and tokens'],

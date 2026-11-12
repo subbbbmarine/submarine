@@ -141,6 +141,14 @@ export default function Page() {
         wallet don&apos;t mark the one that gets them, and the market itself is never marked, so it keeps trading with everyone in the same
         block. A sandwich can&apos;t close in the block it opened.
       </P>
+      <P>
+        They also treat the launchpad, the router and the router&apos;s forwarders (LimitOrders and CopyVault) as approved:{' '}
+        <C>allowance</C> answers the most there is for them, and they move coins without an <C>approve</C> first. Each of those is set
+        once and only ever takes coins from whoever calls it, so this lets nobody move anyone else&apos;s coins, and a first sale or
+        order is one transaction instead of two. Any other spender needs an approval as usual. The launchpad answers which spenders it
+        trusts with <C>trusts(spender)</C>. The tokens are deployed by <B>TokenFactory</B>, which only the launchpad can use, so their
+        code doesn&apos;t count toward the launchpad&apos;s size.
+      </P>
       <Fns
         rows={[
           ['addRewards()', 'Anyone, payable', 'Adds ZRO for holders, split by balance. Waits while less than MIN_EARNING (1 token) is held by earning wallets'],

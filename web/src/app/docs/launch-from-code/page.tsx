@@ -182,9 +182,8 @@ await wallet.writeContract({
   value: parseEther('40'),
 });
 
-// Sell everything, in a later block than the buy: approve the router, then sell.
+// Sell everything, in a later block than the buy. Submarine's tokens need no approval for the router; another token would.
 const bal = await client.readContract({ address: token, abi: ERC20, functionName: 'balanceOf', args: [wallet.account.address] });
-await wallet.writeContract({ address: token, abi: ERC20, functionName: 'approve', args: [ROUTER, bal] });
 const zro = await client.readContract({ address: ROUTER, abi: ROUTER_ABI, functionName: 'quoteSell', args: [token, bal] });
 await wallet.writeContract({
   address: ROUTER, abi: ROUTER_ABI, functionName: 'sell',
@@ -261,7 +260,6 @@ await wallet.writeContract({
 // One escrow, two ways out: half at double the value, all of it at a 40% loss.
 const amount = parseEther('1000000');
 const value = await client.readContract({ address: ROUTER, abi: ROUTER_ABI, functionName: 'quoteSell', args: [token, amount] });
-await wallet.writeContract({ address: token, abi: ERC20, functionName: 'approve', args: [deployment.limitOrders, amount] });
 await wallet.writeContract({
   address: deployment.limitOrders, abi: LIMITS, functionName: 'placeSellLegs',
   args: [token, amount, 0, [

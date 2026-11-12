@@ -7,7 +7,7 @@ import { buyFeeNow, CURVE, ERC20_ABI, feeParts, HOLDER_TOKEN_ABI, LIMITS_ABI, pc
 import { useRank } from '@/lib/rank';
 import { checkExit, LOSSY, type Exit } from '@/lib/exit';
 import { age, zro, cn, compact, short, usdText } from '@/lib/format';
-import { useNow } from '@/lib/hooks';
+import { useNow, everyBlock } from '@/lib/hooks';
 import { useFormat } from '@/lib/money';
 import { openWallet, useTicket } from '@/lib/selection';
 import { useLaunchpads } from '@/lib/launchpads';
@@ -131,10 +131,7 @@ function TradeCard({ token, onTraded }: { token: TokenDetail; onTraded: () => vo
   useEffect(() => {
     if (!hasWallet) return;
     prepareToken(address);
-    const id = setInterval(() => {
-      if (document.visibilityState === 'visible') prepareToken(address);
-    }, 2500);
-    return () => clearInterval(id);
+    return everyBlock(() => prepareToken(address), 1000);
   }, [address, hasWallet]);
 
   // Quotes come from the chain through the router, so what's shown is what the contracts would do right now.
@@ -155,13 +152,12 @@ function TradeCard({ token, onTraded }: { token: TokenDetail; onTraded: () => vo
         if (live) setQuote(0n);
       }
     }, 120);
-    const fresh = setInterval(() => {
-      if (document.visibilityState === 'visible') void ask().then((q) => live && setQuote(q), () => {});
-    }, 2500);
+    // A new block can move the price, so the quote follows each one: what the button shows is what it would send.
+    const stopFresh = everyBlock(() => void ask().then((q) => live && setQuote(q), () => {}), 300);
     return () => {
       live = false;
       clearTimeout(id);
-      clearInterval(fresh);
+      stopFresh();
     };
   }, [wei, isBuy, address, token.price, mode]);
 
@@ -173,11 +169,11 @@ function TradeCard({ token, onTraded }: { token: TokenDetail; onTraded: () => vo
     let live = true;
     const read = () => void checkExit(address, wei).then((v) => live && setExit(v));
     const first = setTimeout(read, 300);
-    const poll = setInterval(read, 12_000);
+    const stopPoll = everyBlock(read, 3000, 12_000);
     return () => {
       live = false;
       clearTimeout(first);
-      clearInterval(poll);
+      stopPoll();
     };
   }, [address, isBuy, mode, wei]);
 

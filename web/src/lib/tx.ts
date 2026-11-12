@@ -1,7 +1,8 @@
 'use client';
 
 import { create } from 'zustand';
-import { BaseError, ContractFunctionRevertedError, decodeErrorResult, keccak256, numberToHex, parseAbi, type Address, type Hex, type LocalAccount, type TransactionReceipt } from 'viem';
+import { BaseError, ContractFunctionRevertedError, decodeErrorResult, formatTransactionReceipt, keccak256, numberToHex, parseAbi, type Address, type Hex, type LocalAccount, type RpcTransactionReceipt, type TransactionReceipt } from 'viem';
+import { onBlock } from './network';
 import { CHAIN_ID } from './config';
 import { forgetGas, gasPriceNow, knownGasLimit, nonceAccepted, nonceFinished, nonceRefused, rememberGas, takeNonce } from './prep';
 import { extension, isExtension, publicClient, useWallet } from './wallet';
@@ -158,6 +159,7 @@ export async function send(call: Call): Promise<TransactionReceipt> {
     }
 
     let hash: Hex;
+    let done: TransactionReceipt | null = null;
     if (isExtension(account)) {
       // A browser extension signs and sends in one step, behind its own popup. Nonce and price are its business.
       const provider = extension();
@@ -173,8 +175,15 @@ export async function send(call: Call): Promise<TransactionReceipt> {
       tx.patch(id, { hash });
 
       try {
-        await publicClient.request({ method: 'eth_sendRawTransaction', params: [raw] });
+        const sent = await sendRaw(raw);
         nonceAccepted(nonce);
+        if (sent) {
+          // The node answered with the result itself: sent, in a block and executed, all in this one round trip.
+          tx.mark(id, 'submitted', since());
+          tx.mark(id, 'ordered', since());
+          tx.mark(id, 'executed', since());
+          done = sent;
+        }
         break;
       } catch (err) {
         const text = errorText(err);
@@ -189,9 +198,9 @@ export async function send(call: Call): Promise<TransactionReceipt> {
         throw err;
       }
     }
-    tx.mark(id, 'submitted', since());
+    if (!done) tx.mark(id, 'submitted', since());
 
-    const receipt = await follow(id, hash, since);
+    const receipt = done ?? (await follow(id, hash, since));
     void useWallet.getState().refreshBalance();
     if (receipt.status !== 'success') throw new TxReverted();
     useTx.getState().patch(id, { status: 'success', error: null });
@@ -212,6 +221,47 @@ export async function send(call: Call): Promise<TransactionReceipt> {
 }
 
 class TxReverted extends Error {}
+
+/**
+ * Whether the node takes `eth_sendRawTransactionSync` (EIP-7966), which waits for the transaction's block and answers with its
+ * receipt: one round trip where sending and then asking for the result is at least two, plus however long the asking waits.
+ * Unknown until the first send, then remembered for the page.
+ */
+let syncSend: boolean | null = null;
+
+/** Sends a signed transaction. Returns its receipt when the node handed it back, null when it has to be followed. */
+async function sendRaw(raw: Hex): Promise<TransactionReceipt | null> {
+  if (syncSend !== false) {
+    try {
+      const rpc = await publicClient.request({ method: 'eth_sendRawTransactionSync' as 'eth_sendRawTransaction', params: [raw] as never });
+      syncSend = true;
+      return rpc && typeof rpc === 'object' ? formatTransactionReceipt(rpc as unknown as RpcTransactionReceipt) : null;
+    } catch (err) {
+      const text = errorText(err);
+      const code = (err as { code?: number; cause?: { code?: number } }).code ?? (err as { cause?: { code?: number } }).cause?.code;
+      // Not a method this node knows, or not in this form: send the plain way, now and from here on. A request the node
+      // couldn't read never reached its pool, so the transaction hasn't gone anywhere yet.
+      if (code === -32601 || code === -32602 || /method.*(not (found|supported|available)|does not exist)|unknown method|not allowed|untagged enum|invalid params/i.test(text)) syncSend = false;
+      // Taken but not in a block within the wait: it's on its way, so follow it like any other.
+      else if (code === 4 || /timeout|timed out/i.test(text)) return null;
+      else throw err;
+    }
+  }
+  await publicClient.request({ method: 'eth_sendRawTransaction', params: [raw] });
+  return null;
+}
+
+/** Resolves on the next block, or after `ms` if none comes first. */
+function nextBlockOr(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => (stop(), resolve()), ms);
+    const stop = onBlock(() => {
+      clearTimeout(timer);
+      stop();
+      resolve();
+    });
+  });
+}
 
 async function follow(id: number, hash: Hex, since: () => number): Promise<TransactionReceipt> {
   const deadline = performance.now() + 60_000;
@@ -235,7 +285,8 @@ async function follow(id: number, hash: Hex, since: () => number): Promise<Trans
       store.mark(id, 'executed', since());
       return receipt;
     }
-    await new Promise((r) => setTimeout(r, 30));
+    // Asked again when a block comes, which is when the answer can change. The timer covers a node with no pushed heads.
+    await nextBlockOr(150);
   }
 }
 

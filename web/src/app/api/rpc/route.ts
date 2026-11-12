@@ -18,6 +18,7 @@ const ALLOWED = new Set([
   'eth_getTransactionCount',
   'eth_getTransactionReceipt',
   'eth_sendRawTransaction',
+  'eth_sendRawTransactionSync',
   'web3_clientVersion',
 ]);
 

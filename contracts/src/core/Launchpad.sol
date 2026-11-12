@@ -41,6 +41,34 @@ abstract contract HoldsOneBlock is ERC20 {
         if (from != address(0) && boughtInBlock[from] == block.number) revert BoughtThisBlock();
         if (_isMarket(from) && !_isMarket(to)) boughtInBlock[to] = block.number;
     }
+
+    /// @dev Submarine's own contracts that move a holder's coins: the launchpad, its router and the router's forwarders (limit
+    /// orders and the copy vault). Each is set once and only ever takes coins from whoever calls it, so treating them as approved
+    /// lets nobody move anyone else's coins, and saves every holder an approval before their first sale or order.
+    function _trusted(address spender) private view returns (bool) {
+        return spender == _curve || ISpenders(_curve).trusts(spender);
+    }
+
+    /// @notice Unlimited for those contracts, so a wallet or site that reads it knows no approval is needed.
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _trusted(spender) ? type(uint256).max : super.allowance(owner, spender);
+    }
+
+    function _spendAllowance(address owner, address spender, uint256 value) internal override {
+        if (!_trusted(spender)) super._spendAllowance(owner, spender, value);
+    }
+}
+
+/// @notice Deploys the tokens, so their code doesn't count toward this contract's size. See TokenFactory.sol.
+interface ITokenFactory {
+    function create(bool holders, string calldata name_, string calldata symbol_, string calldata uri_, uint256 supply, address vault_, address venue_, address hook_, address[] calldata exempt)
+        external
+        returns (address);
+}
+
+interface ISpenders {
+    function trusts(address spender) external view returns (bool);
+    function isForwarder(address forwarder) external view returns (bool);
 }
 
 /// @notice A launched token: fixed supply, minted once to the launchpad, with no owner and no way to mint more.
@@ -228,6 +256,7 @@ contract Launchpad is IVenue, Ownable2Step, ReentrancyGuard {
     }
 
     IPoolSeed public immutable pools;
+    ITokenFactory public immutable factory;
     address public immutable treasury;
     IReferrals public immutable referrals;
     /// @notice The router, set once. A trade through it is asked who it's for, and that trader's rank lowers the terminal's cut,
@@ -289,8 +318,9 @@ contract Launchpad is IVenue, Ownable2Step, ReentrancyGuard {
     error TransferFailed();
     error NotPools();
 
-    constructor(address owner_, address treasury_, address pools_, address referrals_) Ownable(owner_) {
-        if (treasury_ == address(0) || pools_ == address(0)) revert BadConfig();
+    constructor(address owner_, address treasury_, address pools_, address referrals_, address factory_) Ownable(owner_) {
+        if (treasury_ == address(0) || pools_ == address(0) || factory_ == address(0)) revert BadConfig();
+        factory = ITokenFactory(factory_);
         treasury = treasury_;
         pools = IPoolSeed(pools_);
         referrals = IReferrals(referrals_); // zero means no referral program
@@ -394,9 +424,7 @@ contract Launchpad is IVenue, Ownable2Step, ReentrancyGuard {
         uint256 fee = launchFee;
         if (msg.value < fee) revert WrongLaunchFee();
 
-        token = holdersBps > 0
-            ? address(new HolderToken(name_, symbol_, uri_, supply, address(this), pools.vault(), pools.venue(), address(pools), _exempt()))
-            : address(new LaunchToken(name_, symbol_, uri_, supply, address(this), pools.vault(), pools.venue(), address(pools)));
+        token = factory.create(holdersBps > 0, name_, symbol_, uri_, supply, pools.vault(), pools.venue(), address(pools), holdersBps > 0 ? _exempt() : new address[](0));
         curves[token] = Curve({creator: msg.sender, createdAt: uint40(block.timestamp), graduated: false, feeBps: feeBps_, holdersBps: holdersBps, burnBps: burnBps, antiSnipe: antiSnipe, raised: 0, sold: 0, supply: uint128(supply), protocolBps: PROTOCOL_BPS});
         _tokens.push(token);
         protocolFees += fee;
@@ -503,6 +531,12 @@ contract Launchpad is IVenue, Ownable2Step, ReentrancyGuard {
         if (launchFee_ > MAX_LAUNCH_FEE) revert BadConfig();
         launchFee = launchFee_;
         emit LaunchFeeUpdated(launchFee_);
+    }
+
+    /// @notice Whether our tokens treat `spender` as approved: the router or one of its forwarders, all set once.
+    function trusts(address spender) external view returns (bool) {
+        address r = router;
+        return r != address(0) && (spender == r || ISpenders(r).isForwarder(spender));
     }
 
     function setRouter(address router_) external onlyOwner {

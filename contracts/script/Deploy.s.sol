@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import {Script, console2} from "forge-std/Script.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {Launchpad} from "../src/core/Launchpad.sol";
+import {TokenFactory} from "../src/core/TokenFactory.sol";
 import {ZroInfinityPools} from "../src/core/ZroInfinityPools.sol";
 import {ZroInfinityVenue} from "../src/periphery/ZroInfinityVenue.sol";
 import {Vault} from "infinity-core/src/Vault.sol";
@@ -32,7 +33,10 @@ contract Deploy is Script {
         // Trades reach the pools through their own venue: Infinity doesn't charge a hook's own swaps.
         ZroInfinityVenue poolVenue = new ZroInfinityVenue(pools);
         pools.setVenue(address(poolVenue));
-        Launchpad launchpad = new Launchpad(me, address(vault), address(pools), address(referrals));
+        // Tokens come from a factory of their own, so their code doesn't push the launchpad past the contract size limit.
+        TokenFactory factory = new TokenFactory();
+        Launchpad launchpad = new Launchpad(me, address(vault), address(pools), address(referrals), address(factory));
+        factory.setLaunchpad(address(launchpad));
         pools.setLaunchpad(address(launchpad));
 
         Router router = new Router(me, address(vault), address(referrals));
@@ -90,6 +94,7 @@ contract Deploy is Script {
         vm.serializeAddress(json, "poolManager", address(poolManager));
         vm.serializeAddress(json, "poolVenue", address(poolVenue));
         vm.serializeAddress(json, "launchpad", address(launchpad));
+        vm.serializeAddress(json, "tokenFactory", address(factory));
         vm.serializeAddress(json, "router", address(router));
         vm.serializeAddress(json, "referrals", address(referrals));
         vm.serializeAddress(json, "copyVault", address(copyVault));

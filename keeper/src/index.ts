@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createPublicClient, createWalletClient, http, parseAbi, parseAbiItem, type Address, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, http, nonceManager, parseAbi, parseAbiItem, type Address, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { pino } from 'pino';
 
@@ -14,7 +14,10 @@ const log = pino({ level: process.env.LOG_LEVEL || 'info' });
 const CHAIN_ID = parseInt(process.env.CHAIN_ID || '31337');
 const RPC_URL = process.env.RPC_URL || 'http://127.0.0.1:8546';
 const KEY = process.env.KEEPER_PRIVATE_KEY as Hex | undefined;
-const POLL_MS = parseInt(process.env.KEEPER_POLL_MS || '1000');
+/** How often to ask for a new block. Work runs once per new block, so this only bounds how late a block is noticed. */
+const POLL_MS = parseInt(process.env.KEEPER_POLL_MS || '100');
+/** Orders looked at side by side: each takes a few reads, and one after another they'd take blocks. */
+const PARALLEL = 16;
 const BATCH = 32;
 /** Log queries go 1000 blocks at a time, which every node we've met accepts. */
 const LOG_RANGE = 1000n;
@@ -68,7 +71,8 @@ if (!KEY) {
   log.error('KEEPER_PRIVATE_KEY is not set');
   process.exit(1);
 }
-const account = privateKeyToAccount(KEY);
+// Nonces are counted here, so sends that follow each other or go out together never wait to ask the node for one.
+const account = privateKeyToAccount(KEY, { nonceManager });
 const chain = {
   id: CHAIN_ID,
   name: 'Zero',
@@ -77,6 +81,26 @@ const chain = {
 };
 const client = createPublicClient({ chain, transport: http(RPC_URL) });
 const wallet = createWalletClient({ chain, transport: http(RPC_URL), account });
+
+/** The gas price, asked for at most every few seconds instead of before every send. */
+let price: { value: bigint; at: number } | null = null;
+async function fees(): Promise<{ maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }> {
+  if (!price || Date.now() - price.at > 5_000) price = { value: await client.getGasPrice(), at: Date.now() };
+  return { maxFeePerGas: price.value, maxPriorityFeePerGas: price.value };
+}
+
+/** Runs `fn` over `items` with at most `n` at once, keeping their order in the result. */
+async function inParallel<T, R>(items: readonly T[], n: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]!);
+    }
+  }));
+  return out;
+}
 
 type Order = {
   owner: Address;
@@ -173,50 +197,56 @@ async function partFor(o: Order, room: bigint, now: number): Promise<bigint> {
 }
 
 let lastPoke = 0;
+/** Orders in a batch still on its way, left alone until it lands so the next block doesn't send them again. */
+const pending = new Set<bigint>();
 
 async function fillOrders(): Promise<void> {
   const count = await client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'ordersCount' });
   if (count === 0n) return;
-  const ids = await client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'openIds', args: [0n, count] });
+  const ids = (await client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'openIds', args: [0n, count] })).filter((id) => !pending.has(id));
   const now = Math.floor(Date.now() / 1000);
 
   // Simulate each fill on its own. This is also the only trustworthy gas number: fillBatch swallows failed fills with
   // try/catch, so estimating the batch finds the least gas at which the batch "succeeds", which is too little to fill.
-  const queue: Array<{ id: bigint; part: bigint }> = [];
-  const highs: bigint[] = [];
-  let gas = 60_000n;
-  for (const id of ids) {
-    if (queue.length >= BATCH) break;
-    const o = (await client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'getOrder', args: [id] })) as unknown as Order;
-    if (o.kind === KIND.TRAILING) {
-      const value = await quoteSell(o.token, o.total);
-      if (value > o.trigger) highs.push(id);
-    }
-    const room = await client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'available', args: [id] });
-    const part = await partFor(o, room, now);
-    if (part === 0n) continue;
+  const looked = await inParallel(ids, PARALLEL, async (id) => {
+    const [o, room] = await Promise.all([
+      client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'getOrder', args: [id] }) as unknown as Promise<Order>,
+      client.readContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'available', args: [id] }),
+    ]);
+    const [high, part] = await Promise.all([o.kind === KIND.TRAILING ? quoteSell(o.token, o.total).then((v) => v > o.trigger) : false, partFor(o, room, now)]);
+    if (part === 0n) return { id, high, part, gas: 0n };
     try {
-      gas += await client.estimateContractGas({ address: dep.limitOrders, abi: LIMITS, functionName: 'fill', args: [id, part], account });
-      queue.push({ id, part });
+      return { id, high, part, gas: await client.estimateContractGas({ address: dep.limitOrders, abi: LIMITS, functionName: 'fill', args: [id, part], account }) };
     } catch {
       // the quote looked fine but the fill itself would revert, so paying gas to find out again would be waste
+      return { id, high, part: 0n, gas: 0n };
     }
-  }
+  });
+  const highs = looked.filter((l) => l.high).map((l) => l.id);
+  const queue = looked.filter((l) => l.part > 0n).slice(0, BATCH);
 
   // A trailing stop's high only counts once it's on the chain. At most every ten seconds, since each raise costs gas.
   if (highs.length && Date.now() - lastPoke > 10_000) {
     lastPoke = Date.now();
-    const hash = await wallet.writeContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'poke', args: [highs] });
+    const hash = await wallet.writeContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'poke', args: [highs], ...(await fees()) });
     log.info({ raised: highs.length, hash }, 'trailing highs');
   }
 
   if (!queue.length) return;
   const args = [queue.map((q) => q.id), queue.map((q) => q.part)] as const;
+  const gas = queue.reduce((sum, q) => sum + q.gas, 60_000n);
   // Some chains charge the declared limit, so keep the margin small. The extra covers the batch's own call overhead per order.
   const limit = (gas * 125n) / 100n + 30_000n * BigInt(queue.length);
-  const hash = await wallet.writeContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'fillBatch', args, gas: limit });
-  const receipt = await client.waitForTransactionReceipt({ hash, pollingInterval: 200 });
-  log.info({ tried: queue.length, hash, status: receipt.status }, 'fill batch');
+  const hash = await wallet.writeContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'fillBatch', args, gas: limit, ...(await fees()) });
+  // The next block's look goes on without waiting for this one to land; only these orders sit it out.
+  for (const q of queue) pending.add(q.id);
+  void client
+    .waitForTransactionReceipt({ hash, pollingInterval: 100 })
+    .then((receipt) => log.info({ tried: queue.length, hash, status: receipt.status }, 'fill batch'))
+    .catch((err) => log.warn({ hash, err: (err as Error).message.split('\n')[0] }, 'fill batch not confirmed'))
+    .finally(() => {
+      for (const q of queue) pending.delete(q.id);
+    });
 }
 
 // ---------------------------------------------------------------- copy trading
@@ -240,8 +270,8 @@ async function logs<T>(from: bigint, to: bigint, address: Address, event: T) {
 
 async function send(functionName: 'copyBuy' | 'copySell' | 'exit', args: readonly Address[]): Promise<void> {
   try {
-    const gas = await client.estimateContractGas({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, account });
-    const hash = await wallet.writeContract({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, gas: (gas * 120n) / 100n });
+    const [gas, fee] = await Promise.all([client.estimateContractGas({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, account }), fees()]);
+    const hash = await wallet.writeContract({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, gas: (gas * 120n) / 100n, ...fee });
     log.info({ run: functionName, args, hash }, 'copy vault');
   } catch {
     // outside the follower's limits, already done, or not reached: the contract said no, which is the normal case
@@ -280,12 +310,15 @@ async function runCopies(): Promise<void> {
   const recent = head - from > 300n ? head - 300n : from;
   const trades = await logs(recent, head, dep.router, ROUTED);
   scanned = head;
+  // Every follower's copy goes out at once, so they all can land in the block after the leader's.
+  const copies: Array<Promise<void>> = [];
   for (const t of trades) {
     const leader = lc(t.args.trader);
     const followers = followersOf.get(leader);
     if (!followers?.size) continue;
-    for (const follower of followers) await send(t.args.isBuy ? 'copyBuy' : 'copySell', [follower, leader, lc(t.args.token)]);
+    for (const follower of followers) copies.push(send(t.args.isBuy ? 'copyBuy' : 'copySell', [follower, leader, lc(t.args.token)]));
   }
+  await Promise.all(copies);
 }
 
 let lastExits = 0;
@@ -294,26 +327,44 @@ let lastExits = 0;
 async function runExits(): Promise<void> {
   if (!dep.copyVault || Date.now() - lastExits < 5_000) return;
   lastExits = Date.now();
-  for (const follower of exitsSet) {
-    for (const token of held.get(follower) ?? []) {
-      const [tokens] = await client.readContract({ address: dep.copyVault, abi: VAULT, functionName: 'positions', args: [follower, token] });
-      if (tokens > 0n) await send('exit', [follower, token]);
-    }
-  }
+  const pairs = [...exitsSet].flatMap((follower) => [...(held.get(follower) ?? [])].map((token) => [follower, token] as const));
+  await inParallel(pairs, PARALLEL, async ([follower, token]) => {
+    const [tokens] = await client.readContract({ address: dep.copyVault!, abi: VAULT, functionName: 'positions', args: [follower, token] });
+    if (tokens > 0n) await send('exit', [follower, token]);
+  });
 }
 
 log.info({ keeper: account.address, limitOrders: dep.limitOrders, copyVault: dep.copyVault, chainId: CHAIN_ID }, 'keeper up');
+
+/**
+ * Each job runs once per new block, and the three run side by side: copies don't wait for an order batch, and a slow look at
+ * the orders doesn't hold up the next block's copies. A job still busy when a block comes picks it up when it's done.
+ */
+const jobs = [
+  ['orders', fillOrders],
+  ['copies', runCopies],
+  ['exits', runExits],
+] as const;
+const busy = new Set<string>();
+let seen = -1n;
+let ranAt = 0;
 for (;;) {
-  for (const [name, job] of [
-    ['orders', fillOrders],
-    ['copies', runCopies],
-    ['exits', runExits],
-  ] as const) {
-    try {
-      await job();
-    } catch (err) {
-      log.warn({ job: name, err: (err as Error).message.split('\n')[0] }, 'tick failed');
+  try {
+    const head = await client.getBlockNumber({ cacheTime: 0 });
+    // Once a second without a block too: DCA slices and expiries come due with time, and a quiet chain may make no blocks.
+    if (head !== seen || Date.now() - ranAt > 1000) {
+      seen = head;
+      ranAt = Date.now();
+      for (const [name, job] of jobs) {
+        if (busy.has(name)) continue;
+        busy.add(name);
+        void job()
+          .catch((err) => log.warn({ job: name, err: (err as Error).message.split('\n')[0] }, 'tick failed'))
+          .finally(() => busy.delete(name));
+      }
     }
+  } catch (err) {
+    log.warn({ err: (err as Error).message.split('\n')[0] }, 'no head');
   }
   await new Promise((r) => setTimeout(r, POLL_MS));
 }
