@@ -14,5 +14,3 @@ All from Unsplash, each marked "Free to use under the Unsplash License" on its p
 | stars | Jonatan Pie | https://unsplash.com/photos/h8nxGssjQXs |
 | red-lightning | Johannes Plenio | https://unsplash.com/photos/GmBT6GQEOs0 |
 | red-alley | Ozgu Ozden | https://unsplash.com/photos/XUzVk_IJKPw |
-
-`sheet-1.png` and `sheet-2.png` are the 60 photos these were picked from, numbered. `index.txt` gives each number's Unsplash photo id, for the image address `https://images.unsplash.com/photo-<id>`. Check a photo's own page says it's free before using it.

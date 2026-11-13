@@ -19,7 +19,7 @@ import starsThumb from './cards/stars-thumb.webp';
 import tailLights from './cards/tail-lights.webp';
 import tailLightsThumb from './cards/tail-lights-thumb.webp';
 
-/** Photos for the share card, free under the Unsplash License, see docs/card-photos. The last two suit a trade that lost money. */
+/** Photos for the share card, free under the Unsplash License, see SOURCES.md beside them in lib/cards. The last two suit a trade that lost money. */
 export interface Backdrop {
   id: string;
   name: string;
