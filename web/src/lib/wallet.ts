@@ -93,11 +93,25 @@ async function keyFromPin(pin: string, salt: Uint8Array, rounds: number): Promis
  * belongs to the tab and goes when it closes: a new tab or a restarted browser asks for the PIN.
  */
 const TAB_UNLOCK = 'terminal.unlocked.v1';
+/**
+ * How long a tab stays unlocked across reloads. Session storage can outlive the tab when the browser restores it after a
+ * restart, so the copy kept there expires, and the PIN is asked again after it.
+ */
+const TAB_UNLOCK_FOR_MS = 6 * 3_600_000;
 async function rememberUnlock(key: CryptoKey | null) {
   try {
-    if (key) sessionStorage.setItem(TAB_UNLOCK, b64(await crypto.subtle.exportKey('raw', key)));
+    if (key) sessionStorage.setItem(TAB_UNLOCK, JSON.stringify({ k: b64(await crypto.subtle.exportKey('raw', key)), until: Date.now() + TAB_UNLOCK_FOR_MS }));
     else sessionStorage.removeItem(TAB_UNLOCK);
   } catch {}
+}
+/** The key this tab kept, while it is still fresh. */
+function tabUnlock(): string | null {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(TAB_UNLOCK) ?? 'null') as { k?: string; until?: number } | null;
+    if (saved?.k && typeof saved.until === 'number' && saved.until > Date.now()) return saved.k;
+    sessionStorage.removeItem(TAB_UNLOCK);
+  } catch {}
+  return null;
 }
 
 type Lock = { salt: string; iv: string; data: string; rounds?: number };
@@ -262,10 +276,7 @@ export const useWallet = create<WalletState>((set, get) => {
       const base = { ready: true, quickSize: prefs.quickSize ?? '50', slippageBps: prefs.slippageBps ?? 0 };
       const lock = read<Lock | null>(LOCK_STORAGE, null);
       if (lock) {
-        let saved: string | null = null;
-        try {
-          saved = sessionStorage.getItem(TAB_UNLOCK);
-        } catch {}
+        const saved = tabUnlock();
         set({ ...base, locked: true, resuming: Boolean(saved), hasPin: true, account: null, wallets: [] });
         if (saved) {
           void (async () => {

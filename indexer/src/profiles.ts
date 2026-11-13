@@ -75,7 +75,7 @@ export function profileRoutes(app: FastifyInstance): void {
     let stored: string | null = old?.image ? String(old.image) : null;
     if (picture === 'none') stored = null;
     else if (picture !== 'same') {
-      const saved = await saveMeta({ image }, req.ip);
+      const saved = await saveMeta({ image }, `profile:${req.ip}`); // its own budget, apart from launches
       if ('error' in saved) return reply.code(400).send({ message: saved.error });
       stored = saved.image ?? null;
     }

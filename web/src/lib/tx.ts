@@ -244,7 +244,13 @@ async function sendRaw(raw: Hex): Promise<TransactionReceipt | null> {
       if (code === -32601 || code === -32602 || /method.*(not (found|supported|available)|does not exist)|unknown method|not allowed|untagged enum|invalid params/i.test(text)) syncSend = false;
       // Taken but not in a block within the wait: it's on its way, so follow it like any other.
       else if (code === 4 || /timeout|timed out/i.test(text)) return null;
-      else throw err;
+      else {
+        // Some nodes answer an included transaction that reverted with an error rather than a receipt. If the chain has it,
+        // that receipt is the answer; only when it doesn't did the transaction not go out.
+        const landed = await publicClient.getTransactionReceipt({ hash: keccak256(raw) }).catch(() => null);
+        if (landed) return landed;
+        throw err;
+      }
     }
   }
   await publicClient.request({ method: 'eth_sendRawTransaction', params: [raw] });

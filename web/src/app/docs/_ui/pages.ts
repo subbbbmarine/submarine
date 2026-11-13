@@ -44,7 +44,8 @@ export const DOCS: DocEntry[] = [
   { slug: 'api', title: 'Public API', blurb: 'Every route, its parameters and what it answers.', group: 'builders' },
   { slug: 'keepers', title: 'Run a keeper', blurb: 'Fill orders and run copies for anyone, and earn the run fees.', group: 'builders' },
   { slug: 'launch-from-code', title: 'Launch and trade from code', blurb: 'Launch, quote, buy and sell with viem.', group: 'builders' },
-  { slug: 'mcp', title: 'MCP server', blurb: 'Market data and live quotes for AI agents.', group: 'builders' },
+  { slug: 'mcp', title: 'MCP server', blurb: 'Market data and live quotes for AI agents, and trading through an agent vault.', group: 'builders' },
+  { slug: 'agent-vault', title: 'Agent vault', blurb: 'A vault you own for an AI agent: it trades inside your limits, only you withdraw.', group: 'builders' },
 ];
 
 export const href = (slug: string) => (slug ? `/docs/${slug}` : '/docs');

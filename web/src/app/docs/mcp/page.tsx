@@ -10,8 +10,9 @@ export default function Page() {
       slug="mcp"
       lead={
         <>
-          A Model Context Protocol server in <C>mcp/</C> that gives an AI agent Submarine&apos;s market data and real on-chain quotes. It
-          only reads. It holds no keys and can&apos;t send a transaction.
+          A Model Context Protocol server in <C>mcp/</C> that gives an AI agent Submarine&apos;s market data and real on-chain quotes. On
+          its own it only reads and holds no keys. Given an <L to="agent-vault">agent vault</L> and its agent key, it can also trade, but
+          only through that vault and inside its limits.
         </>
       }
       toc={[
@@ -34,6 +35,9 @@ export default function Page() {
           [<C key="6">get_wallet</C>, 'address', 'Holdings with cost, recent trades and tokens it launched'],
           [<C key="7">quote_buy</C>, 'address, zro, an amount of ZRO ("50")', 'Tokens out at the best venue, after fees, read from the router on chain'],
           [<C key="8">quote_sell</C>, 'address, tokens ("1000")', 'ZRO out at the best venue, after fees, read from the router on chain'],
+          [<C key="9">vault_status</C>, 'none', 'With a vault set: its ZRO, the owner\'s limits, what is left to spend today, and its holdings'],
+          [<C key="10">vault_buy</C>, 'address, zro, slippage (percent)', 'With a vault set: buys with the vault\'s ZRO, minimum from a fresh quote'],
+          [<C key="11">vault_sell</C>, 'address, tokens or "all", slippage', 'With a vault set: sells the vault\'s tokens, the ZRO back to the vault'],
         ]}
       />
       <P>
@@ -59,6 +63,8 @@ npm run build --workspace=mcp`}
         rows={[
           [<C key="1">TERMINAL_API</C>, <C key="1b">http://localhost:3001</C>, 'The API to read from. Set it to the public one below to skip running an indexer'],
           [<C key="2">RPC_URL</C>, <C key="2b">http://127.0.0.1:8546</C>, <>The node the quotes are read from. Set it to Zero&apos;s, <C key="2c">{ZERO_RPC}</C></>],
+          [<C key="3">AGENT_VAULT</C>, 'none', <>An <L key="3l" to="agent-vault">agent vault</L> to trade through. With AGENT_KEY, turns on the three vault tools</>],
+          [<C key="4">AGENT_KEY</C>, 'none', 'The vault\'s agent key. It can trade inside the vault and nothing else'],
         ]}
       />
       <P>
@@ -100,12 +106,14 @@ npm run build --workspace=mcp`}
 
       <H2 id="trading">Letting an agent trade</H2>
       <P>
-        The server can&apos;t trade, on purpose. An agent that should trade needs a key of its own and the calls on{' '}
-        <L to="launch-from-code">Launch and trade from code</L>. Give it a wallet with only what it may lose, quote right before every trade,
-        and always pass a minimum.
+        Without a vault the server can&apos;t trade, on purpose. The safe way to let an agent trade is an{' '}
+        <L to="agent-vault">agent vault</L>: you own it, the agent&apos;s key only trades inside it, within your limits, and only you can take
+        anything out. Set <C>AGENT_VAULT</C> and <C>AGENT_KEY</C> and the server offers <C>vault_buy</C> and <C>vault_sell</C>, which quote
+        first and never ask for a looser minimum than the vault allows. An agent can also trade from its own wallet with the calls on{' '}
+        <L to="launch-from-code">Launch and trade from code</L>, but then it holds everything in that wallet.
       </P>
       <Note title="Agents read the same numbers as people.">
-        The <L to="api">public API</L> has far more routes than these eight tools: holder labels, risk, Pulse, Radar and the live stream. An
+        The <L to="api">public API</L> has far more routes than these tools: holder labels, risk, Pulse, Radar and the live stream. An
         agent can call them directly over HTTP.
       </Note>
       <P>

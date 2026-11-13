@@ -61,7 +61,8 @@ export default function Page() {
       <Bullets
         items={[
           'Your keys are encrypted with AES-GCM, using a key made from the PIN by PBKDF2 with 600,000 rounds of SHA-256 and a random salt. They are never stored open.',
-          'Submarine asks for the PIN in each new tab and after the browser restarts. A reload in the same tab doesn\'t ask again: the tab keeps the PIN\'s key in its own session storage until it closes.',
+          'Submarine asks for the PIN in each new tab and after the browser restarts. A reload in the same tab doesn\'t ask again for up to six hours: the tab keeps the PIN\'s key in its own session storage until then.',
+          'The PIN protects the keys stored in this browser, on disk and in other tabs. It does not protect a tab that is already unlocked: anything running in that tab can use the keys.',
           'A wrong PIN just says so. Showing a key asks for the PIN again.',
         ]}
       />

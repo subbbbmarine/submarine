@@ -20,6 +20,7 @@ for (const f of ['globals.css', 'icon.svg']) cpSync(join(web, 'src', 'app', f), 
 for (const f of ['config.ts', 'api.ts', 'submarine.ts']) cpSync(join(web, 'src', 'lib', f), join(app, 'src', 'lib', f));
 for (const f of ['tailwind.config.ts', 'postcss.config.mjs', 'tsconfig.json']) cpSync(join(web, f), join(app, f));
 cpSync(join(landing, 'docs-site', 'layout.tsx'), join(app, 'src', 'app', 'layout.tsx'));
+cpSync(join(landing, 'docs-site', 'docs.css'), join(app, 'src', 'app', 'docs.css'));
 cpSync(join(landing, 'docs-site', 'next.config.mjs'), join(app, 'next.config.mjs'));
 
 const next = createRequire(join(web, 'package.json')).resolve('next/dist/bin/next');

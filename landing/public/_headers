@@ -1,0 +1,29 @@
+# Security headers for submarine.live on Cloudflare Pages. The landing page runs only its own script file; the docs, a
+# static Next export, need inline scripts to start, so they get their own policy. Nothing here is framed by anyone.
+/*
+  X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  ! Access-Control-Allow-Origin
+
+/
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://api.fontshare.com; font-src https://cdn.fontshare.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'
+
+/index.html
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://api.fontshare.com; font-src https://cdn.fontshare.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'
+
+/docs
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://api.fontshare.com; font-src 'self' https://cdn.fontshare.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'
+
+/docs/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://api.fontshare.com; font-src 'self' https://cdn.fontshare.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'
+
+# The page and its script are small and change together: always check for a newer copy, so a new page never meets an old script.
+/assets/site.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Submarine</title>
 <meta name="description" content="Trading terminal and launchpad on Zero by LayerZero. Launch a coin on a curve, then trade it with limit orders, stops, DCA and copy trading, all in one screen. Opening soon.">
-<meta name="theme-color" content="#0a0a0d">
+<meta name="theme-color" content="#0a0a0b">
 <meta property="og:title" content="Submarine">
 <meta property="og:description" content="Trading terminal and launchpad on Zero. Opening soon.">
 <meta property="og:image" content="assets/og.jpg">
@@ -13,276 +13,401 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://api.fontshare.com">
 <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600&display=swap" rel="stylesheet">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* A framed page: thin vertical lines down both sides, a rule between every section and every cell, light large type,
+     white pill buttons. Black and white, with Submarine's turquoise only where something is the point. */
   :root {
-    --bg: #0a0a0d;
-    --card: #111116;
-    --card2: #1b1b22;
-    --line: rgb(255 255 255 / 0.07);
-    --ink: #f4f4f5;
-    --muted: #9e9ead;
-    --faint: #7c7c8b;
-    --accent: #66e4ec;
-    --wrap: 1180px;
-    --pad: 24px;
-    --r-sm: 9px;
-    --r-md: 14px;
-    --r-lg: 20px;
+    --bg: #0a0a0b;
+    --text: #f4f3f0;
+    --muted: #8f8f99;
+    --line: rgb(255 255 255 / 0.08);
+    --line2: rgb(255 255 255 / 0.16);
+    --acc: #66e4ec;
+    --wrap: 1760px;
+    --px: clamp(20px, 3.4vw, 56px);
+    --font: "General Sans", system-ui, sans-serif;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
-  html { background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
-  body { margin: 0; font: 400 16px/1.6 "General Sans", system-ui, sans-serif; overflow-x: clip; }
+  html { background: var(--bg); color-scheme: dark; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font: 400 16px/1.55 var(--font); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; overflow-x: clip; }
   a { color: inherit; text-decoration: none; }
-  .wrap { max-width: var(--wrap); margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  img { display: block; max-width: 100%; }
 
-  /* Header: the S and the name, plain links, one button. Same edges as the page. */
-  header { position: absolute; inset: 0 0 auto; z-index: 3; }
-  header .wrap { height: 76px; display: flex; align-items: center; gap: 28px; }
-  .brand { display: flex; align-items: center; gap: 11px; font-weight: 600; font-size: 18px; letter-spacing: -0.2px; }
-  .brand img { height: 26px; width: auto; display: block; }
-  header nav { margin-left: auto; display: flex; align-items: center; gap: 26px; font-size: 15px; color: rgb(255 255 255 / 0.78); }
-  header nav a:hover { color: #fff; }
-  .btn { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: var(--r-sm); font-weight: 600; font-size: 14px; transition: background-color .18s, transform .12s; }
-  .btn:active { transform: scale(.98); }
-  .btn-accent { background: var(--accent); color: #041316; }
-  .btn-accent:hover { background: #9cf0f4; }
-  .btn-glass { background: rgb(255 255 255 / 0.12); color: #fff; backdrop-filter: blur(10px); }
-  .btn-glass:hover { background: rgb(255 255 255 / 0.2); }
+  .frame { width: 100%; max-width: var(--wrap); margin: 0 auto; border-inline: 1px solid var(--line); position: relative; }
+  .pad { padding-inline: var(--px); }
+  .k { font-size: 13.5px; line-height: 1.4; color: var(--muted); }
 
-  /* Hero: the banner's water, full screen, the headline in the middle. */
-  .hero { position: relative; min-height: max(640px, 100svh); display: flex; align-items: center; overflow: hidden; background: #0b2a2e; }
-  .hero-photo { position: absolute; inset: 0; background: url(assets/hero.jpg) center 30% / cover; transform: scale(1.04); animation: drift 26s ease-in-out infinite alternate; }
-  .hero::after { content: ""; position: absolute; inset: 0; background:
-      linear-gradient(180deg, rgb(4 20 24 / .35) 0%, rgb(4 20 24 / .05) 30%, rgb(4 20 24 / .2) 62%, var(--bg) 100%); }
-  .hero .wrap { position: relative; z-index: 2; text-align: center; width: 100%; }
-  .hero h1 { margin: 0 auto; max-width: 15ch; font-weight: 600; font-size: clamp(44px, 7.2vw, 96px); line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; text-shadow: 0 2px 30px rgb(0 30 34 / .25); }
-  .hero h1 span { font-weight: 300; }
-  .hero p { margin: 26px auto 0; max-width: 34em; font-size: clamp(17px, 1.6vw, 20px); color: rgb(255 255 255 / .9); }
-  .soon { margin-top: 34px; display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: var(--r-sm); background: rgb(6 30 34 / .5); backdrop-filter: blur(12px); font-weight: 500; font-size: 15px; }
-  .soon i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); position: relative; }
-  .soon i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--accent); animation: ping 2s ease-out infinite; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 22px; border-radius: 999px; font-weight: 500; font-size: 15px; white-space: nowrap; transition: opacity .2s, border-color .2s; }
+  .btn.white { background: var(--text); color: #0a0a0b; }
+  .btn.white:hover { opacity: .86; }
+  .btn.line { border: 1px solid var(--line2); }
+  .btn.line:hover { border-color: rgb(255 255 255 / .42); }
+  .btn.small { height: 36px; padding: 0 16px; font-size: 13.5px; }
 
-  /* Everything below the hero sits on graphite. */
-  section { padding: 96px 0; }
-  h2 { margin: 0; font-weight: 600; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.06; letter-spacing: -0.025em; max-width: 18ch; text-wrap: balance; }
-  h2 span { font-weight: 300; color: var(--muted); }
-  .lead { margin: 18px 0 0; max-width: 36em; color: var(--muted); font-size: 18px; }
-  .lead a { color: var(--accent); text-decoration: none; }
-  .lead a:hover { text-decoration: underline; }
+  /* The bar */
+  .bar { position: sticky; top: 0; z-index: 20; background: rgb(10 10 11 / .82); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .bar .frame { height: 72px; display: flex; align-items: center; gap: 32px; }
+  .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 500; font-size: 20px; letter-spacing: -.02em; }
+  .brand img { height: 24px; width: auto; }
+  .bar nav { display: flex; gap: 28px; margin-left: auto; font-size: 15px; color: var(--muted); }
+  .bar nav a:hover { color: var(--text); }
 
-  /* Pieces of the docs, cut off as if torn from the pages. */
-  .pages { margin-top: 48px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
-  .page { position: relative; grid-column: span 4; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px 24px 0; height: 330px; overflow: hidden; }
-  .page.wide { grid-column: span 8; }
-  .page.full { grid-column: span 12; height: 290px; }
-  .page::after { content: ""; position: absolute; inset: auto 0 0; height: 120px; background: linear-gradient(180deg, transparent, var(--card) 85%); pointer-events: none; }
-  .page .path { font: 500 12.5px/1 "IBM Plex Mono", monospace; color: var(--faint); }
-  .page h3 { margin: 14px 0 10px; font-weight: 600; font-size: 22px; letter-spacing: -0.01em; line-height: 1.2; }
-  .page p { margin: 0 0 12px; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
-  .page b { color: var(--ink); font-weight: 500; }
-  /* Each piece opens its whole page in the docs: the title's link covers the card. */
-  .page { transition: border-color .2s; }
-  .page:hover { border-color: rgb(102 228 236 / .35); }
-  .page h3 a { color: inherit; text-decoration: none; }
-  .page h3 a::before { content: ""; position: absolute; inset: 0; z-index: 1; }
-  .page h3 a:focus-visible { outline: none; }
-  .page:has(h3 a:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-  code, pre { font-family: "IBM Plex Mono", monospace; }
-  pre { margin: 8px 0 0; padding: 16px 18px; border-radius: var(--r-md); background: #0b0b0f; border: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: #c9c9d3; overflow: hidden; white-space: pre; }
-  pre .k { color: var(--accent); }
-  pre .c { color: var(--faint); }
-  .rows { margin-top: 6px; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); }
-  .rows div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 14px; font-size: 14.5px; background: #0d0d11; }
-  .rows div + div { border-top: 1px solid var(--line); }
-  .rows span { color: var(--muted); }
-  .rows strong { font-weight: 500; font-variant-numeric: tabular-nums; }
-  .rows .on strong { color: var(--accent); }
-  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-  .tags span { padding: 7px 11px; border-radius: 8px; background: var(--card2); font-size: 14px; }
+  section { border-bottom: 1px solid var(--line); }
+  h1, h2, h3 { font-weight: 300; letter-spacing: -.035em; text-wrap: balance; }
+  h1 b, h2 b, h3 b { font-weight: 300; color: var(--acc); }
 
-  /* Closing band. */
-  .band { position: relative; border-radius: var(--r-lg); overflow: hidden; padding: 72px 48px; background: #0b2a2e url(assets/hero-1200.jpg) center 60% / cover; }
-  .band::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(6 22 26 / .88), rgb(6 22 26 / .45)); }
-  .band > * { position: relative; }
-  .band h2 { max-width: 16ch; }
-  .band p { margin: 16px 0 28px; color: rgb(255 255 255 / .82); max-width: 32em; font-size: 18px; }
+  /* Hero: the statement on the left, an example order on the right */
+  .hero .frame { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .hero .copy { padding: clamp(110px, 12vw, 180px) var(--px) clamp(80px, 9vw, 130px); align-self: center; }
+  .hero h1 { font-size: clamp(48px, 6.6vw, 104px); line-height: 1.01; }
+  /* The hero's right side: trades as the terminal lists them, the coin's picture filling the left of each row and fading out,
+     newest on top, running the cell's full height and melting into the dark at both ends. */
+  .feed { position: relative; min-height: 560px; }
+  .feed-list { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 16px clamp(16px, 2vw, 28px) 18px;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 56px, #000 74%, transparent); mask-image: linear-gradient(180deg, transparent, #000 56px, #000 74%, transparent); }
+  .feed-note { position: absolute; right: clamp(16px, 2vw, 28px); bottom: 16px; font-size: 12.5px; color: var(--muted); }
+  .trade { position: relative; flex: none; height: 92px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 0 24px 0 176px; border-radius: 16px; background: #101013; overflow: hidden; }
+  .trade::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); pointer-events: none; }
+  .trade.new::after { animation: lit 1.6s ease-out; }
+  @keyframes lit { from { box-shadow: inset 0 0 0 1px rgb(102 228 236 / .55); background: rgb(102 228 236 / .06); } }
+  .trade .pic { position: absolute; inset: 0 auto 0 0; width: 168px; background: center 30% / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, #000 30%, rgb(0 0 0 / .5) 62%, transparent); mask-image: linear-gradient(90deg, #000 30%, rgb(0 0 0 / .5) 62%, transparent); }
+  .trade > div { position: relative; min-width: 0; }
+  .trade .tk { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 20px; font-weight: 500; letter-spacing: -.01em; }
+  .trade .tk .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trade .tk .badge { flex: none; margin-left: 0; vertical-align: 0; }
+  .trade .act { margin-top: 4px; font-size: 14px; color: rgb(255 255 255 / .6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trade .side { text-align: right; }
+  .trade .amt { font-size: 19px; font-weight: 500; white-space: nowrap; letter-spacing: -.01em; }
+  .trade .amt.buy, .trade .amt.tp { color: #5fe3a1; }
+  .trade .amt.sell, .trade .amt.stop { color: #ff7b80; }
+  .trade .amt.order { color: var(--acc); }
+  .trade .amt.pool { color: var(--text); }
+  .trade .cap { margin-top: 4px; font-size: 13.5px; color: var(--muted); white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; margin-left: 10px; border-radius: 6px; font-size: 12px; font-weight: 500; letter-spacing: 0; vertical-align: 3px; }
+  .badge.limit, .badge.fill { color: var(--acc); background: rgb(102 228 236 / .11); }
+  .badge.stop { color: #ff7b80; background: rgb(255 123 128 / .11); }
+  .badge.tp { color: #5fe3a1; background: rgb(95 227 161 / .11); }
+  .badge.pool { color: var(--text); background: rgb(255 255 255 / .09); }
 
-  /* The big footer: every place Submarine will live, open now or soon. Soon ones are grey and can't be clicked. */
-  footer { margin-top: 24px; border-top: 1px solid var(--line); background: #08080b; padding: 64px 0 36px; }
+  .hero .sub { margin-top: 24px; max-width: 32em; font-size: clamp(17px, 1.3vw, 19px); color: var(--muted); }
+  .ctas { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+  .chip { margin-top: 18px; display: inline-flex; gap: 10px; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line2); font-size: 13px; color: var(--muted); }
+  .chip b { color: var(--acc); font-weight: 500; }
+  .ticket { border: 1px solid var(--line2); border-radius: 18px; background: #0e0e10; padding: 24px; }
+  .ticket .top { display: flex; justify-content: space-between; gap: 16px; }
+  .ticket h3 { margin-top: 14px; font-size: 26px; line-height: 1.15; letter-spacing: -.02em; }
+  .legs { margin-top: 22px; display: grid; }
+  .legs > div { padding: 14px 0; border-top: 1px solid var(--line); }
+  /* the dot, the name and the state on one line, centred on each other */
+  .legs .row { display: flex; align-items: center; gap: 12px; }
+  .legs i { flex: none; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--muted); }
+  .legs i.on { background: var(--acc); border-color: var(--acc); }
+  .legs b { font-weight: 500; font-size: 15px; }
+  .legs .tag { margin-left: auto; }
+  .legs p { font-size: 13.5px; color: var(--muted); margin: 3px 0 0 22px; }
+  .tag { font-size: 12px; color: var(--muted); border: 1px solid var(--line2); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+  .tag.acc { color: var(--acc); border-color: rgb(102 228 236 / .35); }
+
+  /* Three cells */
+  .cells .frame { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .cells .frame > div { padding: 34px var(--px) 38px; border-left: 1px solid var(--line); }
+  .cells .frame > div:first-child { border-left: 0; }
+  .cells h3 { margin-top: 16px; font-size: clamp(28px, 2.6vw, 36px); line-height: 1.05; }
+  .cells p { margin-top: 12px; font-size: 14.5px; color: var(--muted); max-width: 26em; }
+  .meter { margin-top: 26px; height: 2px; background: var(--line2); position: relative; }
+  .meter span { position: absolute; inset: 0 auto 0 0; background: var(--acc); }
+  .meter em { position: absolute; top: -5px; width: 1px; height: 12px; background: var(--text); }
+
+  /* Numbers */
+  .nums .frame { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .nums .frame > div { padding: 34px var(--px); border-left: 1px solid var(--line); }
+  .nums .frame > div:first-child { border-left: 0; }
+  .nums b { display: block; font-weight: 300; font-size: clamp(38px, 3.8vw, 56px); line-height: 1; letter-spacing: -.04em; }
+  .nums span { display: block; margin-top: 12px; color: var(--muted); font-size: 14px; }
+
+  /* The split: a statement that stays put, and numbered rows that open */
+  .split .frame { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .split .lhs { position: relative; overflow: hidden; min-height: 860px; padding: clamp(56px, 6vw, 92px) var(--px); border-right: 1px solid var(--line); }
+  .split .lhs > div { position: relative; z-index: 1; }
+  /* A line sphere turning slowly at the foot of the column, a point running over it and a ping spreading from it. */
+  #globe { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 72%; display: block; pointer-events: none; }
+  .split h2 { font-size: clamp(34px, 3.6vw, 52px); line-height: 1.04; }
+  .split .lhs p { margin-top: 16px; color: var(--muted); max-width: 26em; }
+  .split .lhs .btn { margin-top: 26px; }
+  .rows > button { display: block; width: 100%; text-align: left; border-bottom: 1px solid var(--line); padding: 28px var(--px); transition: background .3s; }
+  .rows > button:last-child { border-bottom: 0; }
+  .rows .t { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .rows .t b { font-weight: 300; font-size: clamp(22px, 2vw, 27px); letter-spacing: -.02em; color: var(--muted); transition: color .3s; }
+  .rows .t span { font-size: 13px; color: var(--muted); }
+  .rows .b { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s ease; }
+  .rows .b > div { overflow: hidden; }
+  .rows .b p { padding-top: 12px; color: var(--muted); max-width: 36em; font-size: 15px; }
+  .rows > button.on { background: rgb(255 255 255 / .015); }
+  .rows > button.on .t b { color: var(--text); }
+  .rows > button.on .b { grid-template-rows: 1fr; }
+
+  /* Fees */
+  .fees .frame { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 0 48px; padding-block: clamp(72px, 8vw, 116px); }
+  .fees .big { font: 300 clamp(80px, 10vw, 140px)/.9 var(--font); letter-spacing: -.06em; }
+  .fees .lhs p { margin-top: 20px; color: var(--muted); max-width: 26em; }
+  .fees .lhs .btn { margin-top: 26px; }
+  .list { border-top: 1px solid var(--line); }
+  .list > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; padding: 26px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .list b { font-weight: 400; font-size: 20px; letter-spacing: -.01em; }
+  .list p { margin-top: 6px; color: var(--muted); font-size: 14.5px; max-width: 34em; }
+  .list .v { font-weight: 300; font-size: 30px; letter-spacing: -.03em; white-space: nowrap; }
+
+  /* Docs grid */
+  .head { padding-block: clamp(64px, 7vw, 100px) 40px; display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+  .head h2 { font-size: clamp(34px, 4vw, 56px); line-height: 1.04; }
+  .head p { margin-top: 14px; color: var(--muted); max-width: 36em; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+  .grid a { padding: 30px var(--px) 34px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); transition: background .25s; }
+  .grid a:nth-child(3n + 1) { border-left: 0; }
+  .grid a:nth-last-child(-n + 3) { border-bottom: 0; }
+  .grid a:hover { background: rgb(255 255 255 / .02); }
+  .grid a:hover h3 { color: var(--acc); }
+  .grid h3 { margin-top: 14px; font-size: 24px; letter-spacing: -.02em; transition: color .2s; }
+  .grid p { margin-top: 8px; color: var(--muted); font-size: 14.5px; }
+
+  /* Questions */
+  .faq .frame { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 32px; padding-block: clamp(72px, 8vw, 116px); }
+  .faq h2 { font-size: clamp(34px, 4vw, 56px); line-height: 1; }
+  .faq .qs { border-top: 1px solid var(--line); }
+  .faq details { border-bottom: 1px solid var(--line); }
+  .faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 20px; padding: 22px 0; font-size: 18px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--muted); font-weight: 300; font-size: 26px; line-height: 1; transition: transform .25s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { color: var(--muted); padding-bottom: 22px; max-width: 46em; }
+  .faq details a { color: var(--text); border-bottom: 1px solid var(--line2); }
+
+  /* Closing */
+  .cta .frame { padding-block: clamp(96px, 11vw, 160px); }
+  .cta .ctas { margin-top: 30px; }
+  .cta h2 { font-size: clamp(40px, 5vw, 72px); line-height: 1.02; max-width: 12em; }
+
+  /* Footer: pure black, straight */
+  footer { background: #000; }
+  footer .frame { border-color: rgb(255 255 255 / .06); padding-block: 72px 40px; }
   .foot-top { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 40px 28px; }
-  .foot-brand .brand { font-size: 20px; }
-  .foot-brand p { margin: 16px 0 22px; color: var(--muted); font-size: 15px; max-width: 26ch; }
-  .foot-brand .soon { margin-top: 0; height: 38px; font-size: 14px; background: var(--card2); backdrop-filter: none; }
-  .col h4 { margin: 0 0 16px; font-weight: 600; font-size: 14px; color: var(--ink); }
-  .col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
-  .col a, .col .off { font-size: 14.5px; line-height: 1.45; }
-  .col a { color: rgb(255 255 255 / .78); transition: color .15s; }
-  .col a:hover { color: var(--accent); }
-  .col .off { color: #5d5d6b; cursor: default; }
-  .col .off em { font-style: normal; font-size: 11.5px; font-weight: 500; color: #7c7c8b; background: var(--card2); border-radius: 5px; padding: 2px 6px; margin-left: 7px; white-space: nowrap; vertical-align: 1px; }
-  .foot-bottom { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--faint); font-size: 13.5px; }
-  .foot-bottom a { color: var(--muted); }
-  .foot-bottom a:hover { color: var(--ink); }
+  .foot-brand p { margin-top: 14px; color: rgb(255 255 255 / .5); font-size: 14px; max-width: 24ch; }
+  .col h4 { margin-bottom: 16px; font-weight: 500; font-size: 14px; }
+  .col ul { list-style: none; display: grid; gap: 11px; }
+  .col a, .col .off { font-size: 14px; }
+  .col a { color: rgb(255 255 255 / .62); transition: color .15s; }
+  .col a:hover { color: #fff; }
+  .col .off { color: rgb(255 255 255 / .32); cursor: default; }
+  .col .off em { font-size: 11.5px; font-style: normal; margin-left: 7px; color: rgb(255 255 255 / .4); }
+  .foot-bottom { margin-top: 56px; padding-top: 22px; border-top: 1px solid rgb(255 255 255 / .06); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: rgb(255 255 255 / .42); font-size: 13px; }
+  .foot-bottom a { color: rgb(255 255 255 / .62); }
 
-  @keyframes drift { from { transform: scale(1.04) translateY(0); } to { transform: scale(1.1) translateY(-12px); } }
-  @keyframes ping { from { transform: scale(1); opacity: .8; } to { transform: scale(2.6); opacity: 0; } }
-  .rise { opacity: 0; transform: translateY(18px); animation: rise .9s cubic-bezier(.16,1,.3,1) forwards; }
-  .rise.d1 { animation-delay: .08s; } .rise.d2 { animation-delay: .2s; } .rise.d3 { animation-delay: .32s; }
+  .rise { opacity: 0; transform: translateY(14px); animation: rise .9s cubic-bezier(.16, 1, .3, 1) forwards; }
+  .rise.d1 { animation-delay: .08s; } .rise.d2 { animation-delay: .18s; } .rise.d3 { animation-delay: .3s; }
   @keyframes rise { to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) {
-    .hero-photo, .soon i::after { animation: none; }
-    .rise { animation: none; opacity: 1; transform: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { .rise { animation: none; opacity: 1; transform: none; } .rows .b { transition: none; } }
 
-  @media (max-width: 1080px) {
-    .foot-top { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 960px) {
+    .bar nav { display: none; }
+    .bar .frame { justify-content: space-between; }
+    .hero .frame, .split .frame, .fees .frame, .faq .frame { grid-template-columns: minmax(0, 1fr); }
+    .split .lhs { border-right: 0; border-bottom: 1px solid var(--line); }
+    .split .lhs { min-height: 0; padding-bottom: 380px; }
+    #globe { height: 360px; }
+    .feed { border-top: 1px solid var(--line); min-height: 440px; }
+    /* narrow rows: the picture shrinks and the chart steps aside, so the words and the amount keep their room */
+    .trade { height: 80px; padding: 0 16px 0 112px; gap: 12px; border-radius: 14px; }
+    .trade .pic { width: 112px; }
+    .trade .tk { font-size: 17px; }
+    .trade .amt { font-size: 16px; }
+    .cells .frame, .nums .frame, .grid { grid-template-columns: minmax(0, 1fr); }
+    .cells .frame > div, .nums .frame > div { border-left: 0; border-top: 1px solid var(--line); }
+    .cells .frame > div:first-child, .nums .frame > div:first-child { border-top: 0; }
+    .grid a { border-left: 0; }
+    .grid a:nth-last-child(-n + 3) { border-bottom: 1px solid var(--line); }
+    .grid a:last-child { border-bottom: 0; }
+    .fees .rhs { margin-top: 40px; }
+    .foot-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .foot-brand { grid-column: 1 / -1; }
   }
-  @media (max-width: 960px) {
-    .page, .page.wide { grid-column: span 6; }
-    .page.full { grid-column: span 12; }
-  }
-  @media (max-width: 640px) {
-    :root { --pad: 16px; }
-    header nav a.text { display: none; }
-    section { padding: 64px 0; }
-    .page, .page.wide, .page.full { grid-column: span 12; height: 300px; }
-    .band { padding: 44px 22px; }
-    .foot-top { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; }
-    footer { padding-top: 56px; }
+  @media (max-width: 600px) {
+    .frame { border-inline: 0; }
+    .ctas .btn { flex: 1; }
+    .bar .btn { display: none; }
+    .list > div { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   }
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <a class="brand" href="/" aria-label="Submarine"><img src="assets/s.svg" alt="">Submarine</a>
+
+<header class="bar">
+  <div class="frame pad">
+    <a class="brand" href="/" aria-label="Submarine, home"><img src="assets/s.svg" alt="">Submarine</a>
     <nav aria-label="Main">
-      <a class="text" href="#inside">What's inside</a>
-      <a class="text" href="/docs">Docs</a>
-      <a class="btn btn-glass" data-x href="#" hidden>Follow on X</a>
+      <a href="#what">What it does</a>
+      <a href="#fees">Fees</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/subbbbmarine/submarine" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a data-x href="#" hidden>X</a>
     </nav>
+    <a class="btn white small" href="/docs">Read the docs</a>
   </div>
 </header>
 
 <main>
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="hero-photo" aria-hidden="true"></div>
-    <div class="wrap">
-      <h1 id="hero-title" class="rise">Trading terminal <span>and launchpad on Zero</span></h1>
-      <p class="rise d1">Launch a coin on a curve, then trade it with limit orders, stops, DCA and copy trading, all in one screen, on Zero by LayerZero.</p>
-      <div class="soon rise d2"><i aria-hidden="true"></i>Opening soon</div>
-    </div>
-  </section>
-
-  <section id="inside">
-    <div class="wrap">
-      <h2>Pages from the docs <span>before the doors open</span></h2>
-      <p class="lead">The terminal is built and running on a test chain. These are a few pages from its <a href="/docs">docs</a>, which are open to read now.</p>
-
-      <div class="pages">
-        <article class="page wide">
-          <div class="path">Docs, launching</div>
-          <h3><a href="/docs/launching">One transaction makes a coin</a></h3>
-          <p>The coin opens on a bonding curve, and your first buy goes in before anyone else can. When the curve fills, the coin moves to a pool and its liquidity is <b>locked for good</b>.</p>
-          <pre><span class="c">// Launchpad</span>
-<span class="k">function</span> launch(
-  string name, string symbol, string uri,
-  uint256 minTokensOut, uint256 wholeSupply,
-  uint16 feeBps, uint16 holdersBps, uint16 burnBps,
-  bool antiSnipe
-) payable returns (address)</pre>
-        </article>
-
-        <article class="page">
-          <div class="path">Docs, fees</div>
-          <h3><a href="/docs/fees">Every trade pays 1%</a></h3>
-          <div class="rows">
-            <div><span>To the terminal</span><strong>0.4%</strong></div>
-            <div class="on"><span>To the creator</span><strong>0.6%</strong></div>
-            <div><span>Your own fee on top</span><strong>0 to 10%</strong></div>
-            <div><span>Split between</span><strong>holders, burn, you</strong></div>
-          </div>
-          <p style="margin-top:14px">Set once at launch. It never changes, on the curve and on the pool.</p>
-        </article>
-
-        <article class="page">
-          <div class="path">Docs, orders</div>
-          <h3><a href="/docs/orders">Orders that wait for you</a></h3>
-          <p>Limit orders with partial fills, and exits that keepers fill on the chain while your tab is closed.</p>
-          <div class="tags"><span>Limit</span><span>Take profit</span><span>Stop loss</span><span>Trailing stop</span><span>DCA</span><span>Sell groups</span><span>On dev sell</span></div>
-        </article>
-
-        <article class="page">
-          <div class="path">Docs, copy trading</div>
-          <h3><a href="/docs/copy-trading">Copy a wallet, not a screenshot</a></h3>
-          <p>Follow a trader through a vault. Their buys and sales are copied for you at your size, with your own take profit and stop loss, and keep running when you're away.</p>
-        </article>
-
-        <article class="page">
-          <div class="path">Docs, points</div>
-          <h3><a href="/docs/points">Early users count</a></h3>
-          <div class="rows">
-            <div><span>Per ZRO you trade here</span><strong>10 points</strong></div>
-            <div><span>Per ZRO traded on your coins</span><strong>1 point</strong></div>
-            <div><span>Per ZRO on other launchpads</span><strong>5 points</strong></div>
-          </div>
-          <p style="margin-top:14px">Volume ranks also take up to 0.25% off the terminal's cut.</p>
-        </article>
-
-        <article class="page full">
-          <div class="path">Docs, API</div>
-          <h3><a href="/docs/api">Open to bots and agents</a></h3>
-          <p>A public API and a live stream, and an MCP server so AI agents can read markets and quotes.</p>
-          <pre><span class="k">GET</span>  /api/v1/tokens?sort=volume&amp;limit=2
-<span class="k">GET</span>  /api/v1/tokens/{address}/candles?interval=300
-<span class="k">GET</span>  /api/v1/stream            <span class="c">// trades as they happen</span>
-<span class="k">GET</span>  /api/v1/points/{address}</pre>
-        </article>
+  <section class="hero">
+    <div class="frame">
+      <div class="copy">
+        <h1 class="rise">Trade every coin on Zero <b>from one screen.</b></h1>
+        <p class="sub rise d1">Launch a coin on a curve, then trade it with limit orders, stops, DCA and copy trading. Orders fill on the chain while your tab is closed.</p>
+        <div class="ctas rise d2">
+          <a class="btn white" href="/docs">Read the docs</a>
+          <a class="btn line" data-x href="#" hidden>Follow on X</a>
+        </div>
+        <div class="chip rise d3"><b>Zero</b> Opening with mainnet</div>
+      </div>
+      <div class="feed rise d2" aria-label="Example trades, shown for illustration">
+        <div class="feed-list" id="feed"></div>
+        <span class="feed-note">Example feed, not real trades</span>
       </div>
     </div>
   </section>
 
-  <section style="padding-top:0">
-    <div class="wrap">
-      <div class="band">
-        <h2>Coming up from the deep <span style="color:rgb(255 255 255 / .7)">on Zero</span></h2>
-        <p>Follow along for the opening, the first launches and the points board.</p>
-        <a class="btn btn-accent" data-x href="#" hidden>Follow on X</a>
-        <a class="btn btn-glass" href="/docs">Read the docs</a>
+  <section class="cells" aria-label="Launch, trade, automate">
+    <div class="frame">
+      <div>
+        <span class="k">Launch</span>
+        <h3>One transaction</h3>
+        <p>A coin opens on a curve and your first buy goes in before anyone else's. At 6,000 ZRO raised it moves to a pool with its liquidity locked for good.</p>
+        <div class="meter" aria-hidden="true"><span style="width:62%"></span><em style="left:62%"></em></div>
+      </div>
+      <div>
+        <span class="k">Trade</span>
+        <h3>Best price, one click</h3>
+        <p>The router quotes every venue on Zero and trades on the best. A quick buy is one click, and the card under it counts each step in milliseconds.</p>
+        <div class="meter" aria-hidden="true"><span style="width:100%"></span></div>
+      </div>
+      <div>
+        <span class="k">Automate</span>
+        <h3>Orders that wait</h3>
+        <p>Limits, take profits, stop losses, trailing stops and DCA sit on the chain. Keepers fill them the block the price gets there.</p>
+        <div class="meter" aria-hidden="true"><span style="width:38%"></span><em style="left:38%"></em><em style="left:70%"></em></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nums" aria-label="Fixed numbers">
+    <div class="frame">
+      <div><b>1%</b><span>base fee on every trade, fixed for good</span></div>
+      <div><b>6,000 ZRO</b><span>raised moves a coin to its pool</span></div>
+      <div><b>1 block</b><span>hold on bought coins, so a sandwich can't close</span></div>
+    </div>
+  </section>
+
+  <section class="split" id="what">
+    <div class="frame">
+      <div class="lhs">
+        <canvas id="globe" aria-hidden="true"></canvas>
+        <div>
+          <h2>Five things it does <b>while you're away.</b></h2>
+          <p>Everything below runs in contracts and keepers, not in your browser tab.</p>
+          <a class="btn line small" href="/docs">How it works</a>
+        </div>
+      </div>
+      <div class="rows" role="list">
+        <button class="on" role="listitem"><div class="t"><b>Limit orders that fill in parts</b><span>01</span></div><div class="b"><div><p>An order fills as far as your price allows and waits for the rest, the way it would on an exchange. Click a level on the chart to place one.</p></div></div></button>
+        <button role="listitem"><div class="t"><b>Stops that don't need your tab</b><span>02</span></div><div class="b"><div><p>Take profit, stop loss and trailing stops share one escrow, so they cover the same coins. Whichever comes first closes the others.</p></div></div></button>
+        <button role="listitem"><div class="t"><b>Copy trading from a vault</b><span>03</span></div><div class="b"><div><p>Follow a wallet and its trades are copied at your size, with your own limits, take profit and stop loss. Copies run with your laptop closed.</p></div></div></button>
+        <button role="listitem"><div class="t"><b>No sandwiches</b><span>04</span></div><div class="b"><div><p>Coins bought on Submarine can't move until the next block. A sandwich can't close in the block it opened, so there is nothing in it for the bot.</p></div></div></button>
+        <button role="listitem"><div class="t"><b>Every launchpad in one place</b><span>05</span></div><div class="b"><div><p>Every coin on Zero shows up in one feed, whoever launched it, and you can launch on any connected launchpad from here.</p></div></div></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="fees" id="fees">
+    <div class="frame pad">
+      <div class="lhs">
+        <div class="big">1%</div>
+        <p>Every coin launched on Submarine pays the same base on every trade, on its curve and on its pool. Nobody can change it later.</p>
+        <a class="btn line small" href="/docs/fees">Fees in the docs</a>
+      </div>
+      <div class="rhs">
+        <div class="list">
+          <div><div><b>To the creator</b><p>Builds up with every trade, for the creator to claim when they like.</p></div><span class="v">0.6%</span></div>
+          <div><div><b>To the terminal</b><p>Runs the keepers, the indexer and the API. Volume ranks take up to 0.25% off it.</p></div><span class="v">0.4%</span></div>
+          <div><div><b>The creator's own fee</b><p>On top, if they want one, for holders, a burn, or themselves. Set at launch.</p></div><span class="v">0–10%</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="docs" aria-labelledby="docs-title">
+    <div class="frame">
+      <div class="head pad">
+        <div>
+          <h2 id="docs-title">Read it before it opens</h2>
+          <p>The docs cover every contract, fee and order type, and how to trade from code.</p>
+        </div>
+        <a class="btn line small" href="/docs">All docs</a>
+      </div>
+      <div class="grid">
+        <a href="/docs/launching"><span class="k">Launching</span><h3>Make a coin</h3><p>Supply, fee, who earns it, anti-snipe and the first buy.</p></a>
+        <a href="/docs/fees"><span class="k">Fees</span><h3>Where 1% goes</h3><p>The base, the creator's own fee and volume ranks.</p></a>
+        <a href="/docs/orders"><span class="k">Orders</span><h3>Limits and stops</h3><p>Every order type, partial fills and sale groups.</p></a>
+        <a href="/docs/copy-trading"><span class="k">Copy trading</span><h3>Follow a wallet</h3><p>In the browser, or in the vault with the tab closed.</p></a>
+        <a href="/docs/contracts"><span class="k">Contracts</span><h3>How they fit</h3><p>What each one does and what it holds.</p></a>
+        <a href="/docs/api"><span class="k">API</span><h3>Build on it</h3><p>REST, a live stream and an MCP server for agents.</p></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq">
+    <div class="frame pad">
+      <h2>Questions</h2>
+      <div class="qs">
+        <details><summary>When does it open?</summary><p>With Zero's mainnet, once the contracts are deployed there. Zero's testnet comes first.</p></details>
+        <details><summary>Is it audited?</summary><p>Three internal reviews are done and fixed, with tests for each finding. An external audit comes before any real money.</p></details>
+        <details><summary>Is there a token?</summary><p>No. Submarine has no token, and nothing here promises one.</p></details>
+        <details><summary>What wallet do I need?</summary><p>None to start: the terminal makes one in your browser, locked with your PIN. MetaMask works too.</p></details>
+        <details><summary>Where is the code?</summary><p>Open to read on <a href="https://github.com/subbbbmarine/submarine" target="_blank" rel="noopener noreferrer">GitHub</a>: the contracts, the indexer, the keeper and the site.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="frame pad">
+      <div>
+        <h2>Coming up from the deep <b>on Zero.</b></h2>
+        <div class="ctas">
+          <a class="btn white" data-x href="#" hidden>Follow on X</a>
+          <a class="btn line" href="/docs">Read the docs</a>
+        </div>
       </div>
     </div>
   </section>
 </main>
 
 <footer>
-  <div class="wrap">
+  <div class="frame pad">
     <div class="foot-top">
       <div class="foot-brand">
         <a class="brand" href="/" aria-label="Submarine"><img src="assets/s.svg" alt="">Submarine</a>
         <p>Trading terminal and launchpad on Zero by LayerZero.</p>
-        <div class="soon"><i aria-hidden="true"></i>Opening soon</div>
       </div>
-      <div class="col"><h4>Product</h4><ul><li><span class="off" aria-disabled="true">Terminal<em>soon</em></span></li><li><span class="off" aria-disabled="true">Launchpad<em>soon</em></span></li><li><span class="off" aria-disabled="true">Copy trading<em>soon</em></span></li><li><span class="off" aria-disabled="true">Points<em>soon</em></span></li></ul></div><div class="col"><h4>Docs</h4><ul><li><a href="/docs">Overview</a></li><li><a href="/docs/getting-started">Getting started</a></li><li><a href="/docs/fees">Fees</a></li><li><a href="/docs/api">API</a></li></ul></div><div class="col"><h4>Community</h4><ul><li><a data-x href="#" hidden>X</a><span class="off" data-x-off aria-disabled="true">X<em>soon</em></span></li><li><span class="off" aria-disabled="true">Telegram<em>soon</em></span></li><li><span class="off" aria-disabled="true">Discord<em>soon</em></span></li></ul></div><div class="col"><h4>Zero</h4><ul><li><a href="https://layerzero.network/zero" target="_blank" rel="noopener">Zero by LayerZero</a></li><li><a href="https://layerzero.network/atlas" target="_blank" rel="noopener">ATLAS</a></li><li><a href="https://docs.layerzero.network" target="_blank" rel="noopener">LayerZero docs</a></li></ul></div>
+      <div class="col"><h4>Product</h4><ul><li><span class="off" aria-disabled="true">Terminal<em>soon</em></span></li><li><span class="off" aria-disabled="true">Launchpad<em>soon</em></span></li><li><span class="off" aria-disabled="true">Copy trading<em>soon</em></span></li><li><span class="off" aria-disabled="true">Points<em>soon</em></span></li></ul></div>
+      <div class="col"><h4>Docs</h4><ul><li><a href="/docs">Overview</a></li><li><a href="/docs/getting-started">Getting started</a></li><li><a href="/docs/fees">Fees</a></li><li><a href="/docs/api">API</a></li></ul></div>
+      <div class="col"><h4>Community</h4><ul><li><a href="https://github.com/subbbbmarine/submarine" target="_blank" rel="noopener noreferrer">GitHub</a></li><li><a data-x href="#" hidden>X</a><span class="off" data-x-off aria-disabled="true">X<em>soon</em></span></li><li><span class="off" aria-disabled="true">Telegram<em>soon</em></span></li><li><span class="off" aria-disabled="true">Discord<em>soon</em></span></li></ul></div>
+      <div class="col"><h4>Zero</h4><ul><li><a href="https://layerzero.network/zero" target="_blank" rel="noopener noreferrer">Zero by LayerZero</a></li><li><a href="https://layerzero.network/atlas" target="_blank" rel="noopener noreferrer">ATLAS</a></li><li><a href="https://docs.layerzero.network" target="_blank" rel="noopener noreferrer">LayerZero docs</a></li></ul></div>
     </div>
     <div class="foot-bottom">
       <span>Submarine is in development. Nothing here is live trading yet, and no token exists.</span>
-      <span>Built for <a href="https://layerzero.network/zero" target="_blank" rel="noopener">Zero</a></span>
+      <span>Built for <a href="https://layerzero.network/zero" target="_blank" rel="noopener noreferrer">Zero</a></span>
     </div>
   </div>
 </footer>
 
-<script>
-  // The X account, once it exists. Until then the X links stay hidden.
-  const X_URL = '';
-  if (X_URL) {
-    document.querySelectorAll('[data-x]').forEach((a) => { a.href = X_URL; a.target = '_blank'; a.rel = 'noopener'; a.hidden = false; });
-    document.querySelectorAll('[data-x-off]').forEach((e) => e.remove());
-  }
-</script>
+<script src="assets/site.js?v=75adc28bcf"></script>
 </body>
 </html>

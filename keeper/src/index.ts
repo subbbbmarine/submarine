@@ -18,6 +18,8 @@ const KEY = process.env.KEEPER_PRIVATE_KEY as Hex | undefined;
 const POLL_MS = parseInt(process.env.KEEPER_POLL_MS || '100');
 /** Orders looked at side by side: each takes a few reads, and one after another they'd take blocks. */
 const PARALLEL = 16;
+/** Copies sent side by side. Enough to land a leader's followers together, few enough that one refused send costs little. */
+const COPIES_AT_ONCE = 5;
 const BATCH = 32;
 /** Log queries go 1000 blocks at a time, which every node we've met accepts. */
 const LOG_RANGE = 1000n;
@@ -84,6 +86,17 @@ const wallet = createWalletClient({ chain, transport: http(RPC_URL), account });
 
 /** The gas price, asked for at most every few seconds instead of before every send. */
 let price: { value: bigint; at: number } | null = null;
+
+/**
+ * A send the node refused (underpriced, a nonce out of line) leaves the counted nonces ahead of the chain, and every later
+ * send would queue behind the gap. So the count starts again from the chain, and the price is asked for fresh.
+ */
+function afterRefusedSend(err: unknown) {
+  const text = String((err as Error)?.message ?? err);
+  if (!/nonce|underpriced|replacement|fee too low|gas price/i.test(text)) return;
+  nonceManager.reset({ address: account.address, chainId: CHAIN_ID });
+  price = null;
+}
 async function fees(): Promise<{ maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }> {
   if (!price || Date.now() - price.at > 5_000) price = { value: await client.getGasPrice(), at: Date.now() };
   return { maxFeePerGas: price.value, maxPriorityFeePerGas: price.value };
@@ -237,7 +250,13 @@ async function fillOrders(): Promise<void> {
   const gas = queue.reduce((sum, q) => sum + q.gas, 60_000n);
   // Some chains charge the declared limit, so keep the margin small. The extra covers the batch's own call overhead per order.
   const limit = (gas * 125n) / 100n + 30_000n * BigInt(queue.length);
-  const hash = await wallet.writeContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'fillBatch', args, gas: limit, ...(await fees()) });
+  let hash: Hex;
+  try {
+    hash = await wallet.writeContract({ address: dep.limitOrders, abi: LIMITS, functionName: 'fillBatch', args, gas: limit, ...(await fees()) });
+  } catch (err) {
+    afterRefusedSend(err);
+    throw err;
+  }
   // The next block's look goes on without waiting for this one to land; only these orders sit it out.
   for (const q of queue) pending.add(q.id);
   void client
@@ -269,12 +288,18 @@ async function logs<T>(from: bigint, to: bigint, address: Address, event: T) {
 }
 
 async function send(functionName: 'copyBuy' | 'copySell' | 'exit', args: readonly Address[]): Promise<void> {
+  let gas: bigint;
   try {
-    const [gas, fee] = await Promise.all([client.estimateContractGas({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, account }), fees()]);
-    const hash = await wallet.writeContract({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, gas: (gas * 120n) / 100n, ...fee });
-    log.info({ run: functionName, args, hash }, 'copy vault');
+    gas = await client.estimateContractGas({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, account });
   } catch {
-    // outside the follower's limits, already done, or not reached: the contract said no, which is the normal case
+    return; // outside the follower's limits, already done, or not reached: the contract said no, which is the normal case
+  }
+  try {
+    const hash = await wallet.writeContract({ address: dep.copyVault!, abi: VAULT, functionName, args: args as never, gas: (gas * 120n) / 100n, ...(await fees()) });
+    log.info({ run: functionName, args, hash }, 'copy vault');
+  } catch (err) {
+    afterRefusedSend(err);
+    log.warn({ run: functionName, args, err: (err as Error).message.split('\n')[0] }, 'copy not sent');
   }
 }
 
@@ -310,15 +335,15 @@ async function runCopies(): Promise<void> {
   const recent = head - from > 300n ? head - 300n : from;
   const trades = await logs(recent, head, dep.router, ROUTED);
   scanned = head;
-  // Every follower's copy goes out at once, so they all can land in the block after the leader's.
-  const copies: Array<Promise<void>> = [];
+  // Copies go out a few at a time, so they can land in the block after the leader's without one stuck send holding up many.
+  const copies: Array<readonly ['copyBuy' | 'copySell', readonly Address[]]> = [];
   for (const t of trades) {
     const leader = lc(t.args.trader);
     const followers = followersOf.get(leader);
     if (!followers?.size) continue;
-    for (const follower of followers) copies.push(send(t.args.isBuy ? 'copyBuy' : 'copySell', [follower, leader, lc(t.args.token)]));
+    for (const follower of followers) copies.push([t.args.isBuy ? 'copyBuy' : 'copySell', [follower, leader, lc(t.args.token)]] as const);
   }
-  await Promise.all(copies);
+  await inParallel(copies, COPIES_AT_ONCE, ([name, args]) => send(name, args));
 }
 
 let lastExits = 0;

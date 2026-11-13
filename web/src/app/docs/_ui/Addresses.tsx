@@ -16,6 +16,7 @@ const ROWS: Array<[keyof Deployment, string, string]> = [
   ['limitOrders', 'LimitOrders', 'Orders, TP and SL, trailing, DCA'],
   ['vault', 'BuybackVault', 'The treasury, which can only buy and burn'],
   ['copyVault', 'CopyVault', 'Copy trading with the browser closed'],
+  ['agentVaultFactory', 'AgentVaultFactory', 'Makes agent vaults, each owned by whoever makes it'],
   ['referrals', 'Referrals', 'Links and referral earnings'],
 ];
 

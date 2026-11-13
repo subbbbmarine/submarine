@@ -27,6 +27,7 @@ export interface Deployment {
   limitOrders: Address;
   referrals?: Address;
   copyVault?: Address;
+  agentVaultFactory?: Address;
 }
 
 /** Mirrors Launchpad.sol: every token's curve, whatever supply its creator chose, as shares of that supply and ZRO. */

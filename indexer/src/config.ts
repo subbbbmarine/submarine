@@ -22,6 +22,7 @@ export interface Deployment {
   limitOrders: `0x${string}`;
   referrals?: `0x${string}`;
   copyVault?: `0x${string}`;
+  agentVaultFactory?: `0x${string}`;
 }
 
 /** Addresses come from the deploy script's output. Without one the indexer still discovers tokens, it just can't price them. */

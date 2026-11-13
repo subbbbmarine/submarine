@@ -9,7 +9,7 @@ ignores. Rebuild them before every deploy that should carry docs changes, from t
 
     node landing/build-docs.mjs
 
-Then deploy from this folder:
+Stamp the script's address so browsers drop an old copy (`node landing/stamp.mjs`), then deploy from this folder:
 
     npx wrangler pages deploy public --project-name submarine-live --branch main
 

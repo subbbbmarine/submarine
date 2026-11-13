@@ -1,0 +1,208 @@
+/*
+ * The docs on submarine.live in the landing page's look: a wide frame of thin lines, General Sans, light large headings, cells
+ * split by rules instead of rounded tiles. The pages themselves are the terminal's; only this file, loaded after its styles in the
+ * docs build, changes how they look here.
+ */
+:root {
+  --bg: 10 10 11;
+  --card: 10 10 11;
+  --wrap: 1760px;
+  --px: clamp(20px, 3.4vw, 56px);
+  --rule: rgb(255 255 255 / 0.08);
+}
+html,
+body.docs {
+  background: #0a0a0b;
+}
+body.docs {
+  font-family: 'General Sans', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+body.docs .num {
+  font-weight: 400;
+}
+
+/* the frame */
+.docs .frame {
+  width: 100%;
+  max-width: var(--wrap);
+  margin: 0 auto;
+  border-inline: 1px solid var(--rule);
+}
+
+/* no tiles: panels lose their fill, rounding and border */
+.docs .panel {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+/* the docs' own layout: the menu as a column with a rule on its right, the page beside it */
+.docs main > div {
+  gap: 0 !important;
+}
+.docs aside.panel {
+  width: 280px !important;
+  max-height: calc(100dvh - 64px) !important;
+  top: 64px !important;
+  padding: 40px 20px 40px calc(var(--px) - 10px) !important;
+  border-right: 1px solid var(--rule);
+}
+.docs aside nav p {
+  font-weight: 500;
+  font-size: 14px;
+}
+.docs aside nav ul {
+  border-left-color: var(--rule) !important;
+}
+.docs details.panel {
+  border-bottom: 1px solid var(--rule);
+}
+
+/* the page */
+.docs article.panel {
+  padding: clamp(48px, 6vw, 88px) var(--px) 96px !important;
+  min-height: calc(100dvh - 64px);
+}
+.docs article h1 {
+  font-weight: 300 !important;
+  font-size: clamp(40px, 4.6vw, 68px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.035em !important;
+  margin-top: 14px !important;
+}
+.docs article > div:first-of-type {
+  font-size: 18px;
+  color: rgb(255 255 255 / 0.62);
+  max-width: 44em;
+  margin-top: 20px;
+}
+.docs article h2 {
+  font-weight: 300 !important;
+  font-size: clamp(26px, 2.4vw, 34px) !important;
+  letter-spacing: -0.025em !important;
+  margin-top: 64px !important;
+  padding-top: 36px !important;
+  border-top-color: var(--rule) !important;
+}
+.docs article h3 {
+  font-weight: 500 !important;
+  font-size: 17px !important;
+  margin-top: 32px !important;
+}
+.docs article p,
+.docs article li,
+.docs article dd {
+  font-size: 16px !important;
+}
+
+/* "On this page": two columns between rules, no box, no capitals */
+.docs article nav[aria-label='On this page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border-block: 1px solid var(--rule);
+  padding: 22px 0 !important;
+  margin-top: 36px !important;
+}
+.docs article nav[aria-label='On this page'] > p {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 400 !important;
+  font-size: 14px !important;
+}
+
+/* every rounded tile becomes a cell with a hairline */
+.docs article .rounded-xl,
+.docs article .rounded-lg {
+  border-radius: 0 !important;
+}
+.docs article .bg-white\/\[\.03\] {
+  background: transparent !important;
+  border: 1px solid var(--rule);
+}
+.docs article .hover\:bg-white\/\[\.06\]:hover {
+  background: rgb(255 255 255 / 0.025) !important;
+}
+.docs article .grid.gap-2 {
+  gap: 0 !important;
+}
+.docs article .grid.gap-2 > * + * {
+  margin-left: -1px;
+}
+.docs article .grid.gap-2 > * {
+  margin-top: -1px;
+}
+.docs article [class*='text-[18px]'].num {
+  font-weight: 300;
+  font-size: 26px !important;
+  letter-spacing: -0.02em;
+}
+
+/* tables: rules only */
+.docs article table {
+  font-size: 15px !important;
+}
+.docs article figure > div {
+  border-radius: 0 !important;
+  border-inline: 0 !important;
+  border-color: var(--rule) !important;
+}
+.docs article thead tr {
+  background: transparent !important;
+}
+.docs article th {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  padding-left: 0 !important;
+}
+.docs article td {
+  padding-left: 0 !important;
+  border-color: var(--rule) !important;
+}
+.docs article tr {
+  border-color: var(--rule) !important;
+}
+
+/* code keeps its block, square and on the page's black */
+.docs article pre {
+  font-size: 13.5px !important;
+}
+.docs article figure.overflow-hidden {
+  border-radius: 0 !important;
+  background: #070708 !important;
+  border-color: var(--rule) !important;
+}
+.docs article code {
+  border-radius: 4px !important;
+}
+
+/* notes: a rule on the left, no fill */
+.docs article .rounded-r-xl {
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* previous and next */
+.docs article .mt-12.grid {
+  border-top-color: var(--rule) !important;
+}
+
+/* a header row is a rule under the labels, not a box */
+.docs article thead tr.bg-white\/\[\.03\] {
+  border: 0 !important;
+  border-bottom: 1px solid var(--rule) !important;
+}
+.docs article th:last-child,
+.docs article td:last-child {
+  padding-right: 0 !important;
+}
+.docs article nav[aria-label='On this page'] {
+  border-inline: 0 !important;
+}
+/* the page you're on: turquoise text and the rule beside it, no filled pill */
+.docs aside nav a[aria-current='page'],
+.docs details nav a[aria-current='page'] {
+  background: transparent !important;
+}

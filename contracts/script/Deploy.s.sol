@@ -14,6 +14,7 @@ import {LimitOrders} from "../src/periphery/LimitOrders.sol";
 import {BuybackVault} from "../src/fees/BuybackVault.sol";
 import {Referrals} from "../src/periphery/Referrals.sol";
 import {CopyVault} from "../src/periphery/CopyVault.sol";
+import {AgentVaultFactory} from "../src/periphery/AgentVault.sol";
 
 /// @notice Deploys and wires the whole stack, then writes the addresses to deployments/<chainId>.json.
 /// Reads the key from PRIVATE_KEY. Its address owns everything and runs the buybacks, unless OWNER (a multisig) and KEEPER are set.
@@ -53,6 +54,8 @@ contract Deploy is Script {
         address[] memory forwarders = new address[](2);
         (forwarders[0], forwarders[1]) = (address(limitOrders), address(copyVault));
         router.setForwarders(forwarders);
+        // Agent vaults are made by their owners from this factory and trade through the router as themselves.
+        AgentVaultFactory agentVaults = new AgentVaultFactory(address(router));
 
         // These only pass tokens through, so on a token that pays its holders they shouldn't earn like holders.
         // The Infinity vault too: that is where every pool's tokens sit.
@@ -98,6 +101,7 @@ contract Deploy is Script {
         vm.serializeAddress(json, "router", address(router));
         vm.serializeAddress(json, "referrals", address(referrals));
         vm.serializeAddress(json, "copyVault", address(copyVault));
+        vm.serializeAddress(json, "agentVaultFactory", address(agentVaults));
         string memory out = vm.serializeAddress(json, "limitOrders", address(limitOrders));
         string memory path = string.concat(vm.projectRoot(), "/deployments/", vm.toString(block.chainid), ".json");
         vm.writeJson(out, path);
